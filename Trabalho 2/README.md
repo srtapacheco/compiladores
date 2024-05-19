@@ -6,9 +6,13 @@ Este projeto inclui um analisador léxico desenvolvido com a ferramenta LEX. O a
 ## Compilação e Execução
 Para compilar o analisador léxico, execute o seguinte comando no diretório do projeto:
 
-lex scan.lex
+lex tradutor.l
 
-g++ -Wall -std=c++17 main.cc -lfl
+g++ -std=c++17 lex.yy.c -o saida -ll
+
+## E para rodar os testes
+
+./run_tests.sh
 
 ## Gramática utilizada
 
