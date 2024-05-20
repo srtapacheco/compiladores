@@ -1,0 +1,59 @@
+{
+    "testes": [
+        {
+            "nome": "Test 0: Declaração e Atribuições de variáveis",
+            "arquivo_input": "Teste0.txt",
+            "arquivo_output": "Teste0-out.txt"
+        },
+        {
+            "nome": "Test 1: #1 Declaração de variáveis",
+            "arquivo_input": "Teste1.txt",
+            "arquivo_output": "Teste1-out.txt"
+        },
+        {
+            "nome": "Test 2: #2 Atribuição e contas",
+            "arquivo_input": "Teste2.txt",
+            "arquivo_output": "Teste2-out.txt"
+        },
+        {
+            "nome": "Test 3: #3 if sem else",
+            "arquivo_input": "Teste3.txt",
+            "arquivo_output": "Teste3-out.txt"
+        },
+        {
+            "nome": "Test 4: #4 if com else",
+            "arquivo_input": "Teste4.txt",
+            "arquivo_output": "Teste4-out.txt"
+        },
+        {
+            "nome": "Test 5: #5 Objetos e arrays",
+            "arquivo_input": "Teste5.txt",
+            "arquivo_output": "Teste5-out.txt"
+        },
+        {
+            "nome": "Test 6: #6 while",
+            "arquivo_input": "Teste6.txt",
+            "arquivo_output": "Teste6-out.txt"
+        },
+        {
+            "nome": "Test 7: #7 for",
+            "arquivo_input": "Teste7.txt",
+            "arquivo_output": "Teste7-out.txt"
+        },
+        {
+            "nome": "Test 8: #8 multiplicação de matrizes",
+            "arquivo_input": "Teste8.txt",
+            "arquivo_output": "Teste8-out.txt"
+        },
+        {
+            "nome": "Test 9: #9 Variável não declarada",
+            "arquivo_input": "Teste9.txt",
+            "arquivo_output": "Teste9-out.txt"
+        },
+        {
+            "nome": "Test 10: #10 Declaração duplicada da mesma variável",
+            "arquivo_input": "Teste10.txt",
+            "arquivo_output": "Teste10-out.txt"
+        }
+    ]
+}
