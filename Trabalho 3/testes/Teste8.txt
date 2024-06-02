@@ -1,0 +1,6 @@
+function f( x, y, z ) {
+  let z;
+  return x*x + y;
+}
+let f( 5.2, 7 );
+

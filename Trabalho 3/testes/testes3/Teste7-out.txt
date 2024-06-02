@@ -1,1 +1,0 @@
-a& a {} = ^ campo& campo "c" = ^ i& i 0 = ^ i@ 6 < 26 ? 51 # a@ campo campo@ i@ + = ^ campo@ i@ [=] ^ i i@ 2 + = ^ 18 # .

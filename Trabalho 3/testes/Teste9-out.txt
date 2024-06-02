@@ -1,0 +1,1 @@
+mdc & mdc {} = '&funcao' 22 [=] ^ a & a 24 33 8 3 mdc @ $ = ^ . a & a arguments @ 0 [@] = ^ b & b arguments @ 1 [@] = ^ b @ 0 == 62 ?b @ a @ b @ % 2 mdc @ $ '&retorno' @ ~ 68 # a @ '&retorno' @ ~ undefined @ '&retorno' @ ~

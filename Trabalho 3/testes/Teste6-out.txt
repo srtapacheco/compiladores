@@ -1,0 +1,1 @@
+str & str "hello" = ^ valor & valor {} = '&funcao' 38 [=] ^ a & a 0 valor @ $ = ^ str "HELLO" = ^ b & b 0 valor @ $ = ^ . str @ ", world" + '&retorno' @ ~ undefined @ '&retorno' @ ~

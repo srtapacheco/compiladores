@@ -1,5 +1,5 @@
 all: miniJS.out
-	../Testes_Trabalhos/test.py -d testes/testes3 -p ./miniJS.out
+	../Testes_Trabalhos/test.py -d testes -p ./miniJS.out
 
 lex.yy.c: miniJS.l
 	lex miniJS.l

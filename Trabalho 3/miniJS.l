@@ -1,4 +1,4 @@
-WS	[ \s\t\n]*
+WS      [ \t\n]*
 
 DIGITO  [0-9]
 LETRA   [A-Za-z]
@@ -6,7 +6,7 @@ INT     {DIGITO}+
 FLOAT   {INT}("."{INT})?([Ee]("-"|"+")?{INT})?
 ID ("$"|{LETRA}|_)+({LETRA}|{DIGITO})*
 
-STR     ["]([^\"]|"\\"[\"]|[\"][\"])*["]
+STRING     ["]([^\"]|"\\"[\"]|[\"][\"])*["]
 
 LINHA   [^\n]*
 
@@ -19,50 +19,67 @@ ELSE    "else"|"Else"|"eLse"|"elSe"|"elsE"|"ELse"|"ElSe"|"ElsE"|"eLSe"|"elSE"|"e
 COMENTARIO_BLOCO    "/*"([^\*]|"*"[^/])*"*/"
 COMENTARIO_LINHA    "//"(.)*[\n]
 
-STRING_1  [']([^\']|"\\'"|[\'][\'])*[']
-STRING_2  [`]({WS}|.)*[`]
+STRING1  [']([^\']|"\\'"|[\'][\'])*[']
+STRING2 [`]({WS}|.)*[`]
+
+
+OBJETO_VAZIO        "{"{WS}*"}"
+ARRAY_VAZIO         "["{WS}*"]"
+
+INCREMENTO      "+""+"
+BOLEANO       ("true"|"false")
 
 %%
 
-{WS}	{ /* ignora espaços, tabs e '\n' */ }
+"\n"	   { linha++;coluna=1;}
 
-"\n" { linha++;}
+" "        { coluna++; }
 
-
-{INT}     { yylval.c = yytext; return CINT; }
-{FLOAT}   { yylval.c = yytext; return CDOUBLE; }
-
-{FOR}     { yylval.c = yytext; return FOR; }
-{WHILE}   { yylval.c = yytext; return WHILE; }
-{IF}      { yylval.c = yytext; return IF; }
-{ELSE}    { yylval.c = yytext; return ELSE; }
-
-"print"   { yylval.c = yytext; return PRINT; }
-
-"let"     { yylval.c = yytext; return LET; }
-"const"   { yylval.c = yytext; return CONST; }
-"var"     { yylval.c = yytext; return VAR; }
-
-"+"       { return '+'; }
-
-">="      { return MA_IG; }
-"<="      { return ME_IG; }
-"=="      { return IGUAL; }
-"!="      { return DIF; }
+"\t"       { coluna += 4; }
 
 
-"{"/"}"     {yylval.c = yytext; return ABRE_FECHA_CHAVE;}
-"+"/"+"     {return _MAISMAIS;}
-"+"/"="     {return _CONC;}
+{INT}     {return token(_INT);}
+{FLOAT}   {return token(_FLOAT);}
+{BOLEANO}    {return token(_BOLEANO);} 
+
+{FOR}        {return token(_FOR);}
+{WHILE}      {return token(_WHILE);}
+{IF}         {return token(_IF);}
+{ELSE}       {return token(_ELSE);}
+
+"println"    {return token(_PRINT);}
+
+"let"    {return token(_LET);}
+"const"  {return token(_CONST);}
+"var"    {return token(_VAR);}
 
 
-{ID}              { yylval.c = yytext; return ID; }
-{COMENTARIO_BLOCO}  { return _COMENTARIO; }
-{COMENTARIO_LINHA}  { return _COMENTARIO; }
-{STR}             { yylval.c = yytext; return CSTRING; }
-{STRING_1}        { yylval.c = yytext; return CSTRING; }
-{STRING_2}        { yylval.c = yytext; return CSTRING2; }
+"asm{".*"}"  {return token(_ASM); }
 
-.	    {return yytext[0];}
+"function"   {return token(_FUNCTION);}
+"return"     {return token(_RETURN);} 
+
+{OBJETO_VAZIO}     {return token(_NOVO_OBJETO);}
+{ARRAY_VAZIO}     {return token(_ARRAY);}
+{INCREMENTO}   {return token(_MAISMAIS);}
+
+"+"          {return token('+');}
+">="         {return token(_MA_IG);}
+"<="         {return token(_ME_IG);}
+"=="         {return token(_IGUAL);}
+"!="         {return token(_DIF);}
+"+"/"="      {return token(_CONCAT);}
+
+
+
+
+{ID}     {return token(_ID);}
+{COMENTARIO_BLOCO}       {return token(_COMENTARIO);}
+{COMENTARIO_LINHA}       {return token(_COMENTARIO);}
+{STRING}            {return token(_STRING);}
+{STRING1}           {return token(_STRING);}
+{STRING2}           {return token(_STRING2);}
+
+.       {return token(yytext[0]);}
 
 %%

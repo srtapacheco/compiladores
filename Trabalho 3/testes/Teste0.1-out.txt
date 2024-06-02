@@ -1,0 +1,1 @@
+log & log {} = '&funcao' 16 [=] ^ 'Hello, world!' 1 log @ $ ^ . msg & msg arguments @ 0 [@] = ^ msg @ println # undefined ^ undefined @ '&retorno' @ ~
