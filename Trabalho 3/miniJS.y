@@ -1,7 +1,5 @@
 %{
-
-extern "C" int yylex();  
-
+extern "C" int yylex();
 
 #include <iostream>
 #include <string>
@@ -13,22 +11,20 @@ extern "C" int yylex();
 
 using namespace std;
 
-int contador = 0, linha = 0, coluna = 1, locais = 0, declaracaoAntecedente = 0;
+int contador = 0, linha = 0, coluna = 1, args = 0, locais = 0, declaracaoAntecedente = 0;
 
 string declaracao = "";
 
 int token(int tk);
 
-void exibir_codigo_processado(string codigo);
-void exibir_erro(string codigo);
+void exibir_codigo_processado(string valor);
+void exibir_erro(string valor);
 
 int yyparse();
 void yyerror(const char *);
 
-void set_var(string var);
-void check_var(string var);
-
-
+void setVar(string var);
+void checkVar(string var);
 string enderecoPraFrente(string nome);
 string enderecoResolvido(string nome);
 string declarar(string var);
@@ -36,7 +32,7 @@ string declarar_arg(vector<string> args);
 string acessar_campo(string nome_objeto, string campo);
 string acessar_objeto(string nome_var);
 string jumpComandos(string label_endereco_final, string label_endereco_corpo);
-void ReplaceStringInPlace(std::string& subject, const std::string& search,const std::string& replace);
+void ReplaceStringInPlace(std::string& subject, const std::string& search, const std::string& replace);
 string asm_trim(string asm_command);
 string declara_funcao(string nome, string parametros, string corpo);
 string acessar_variavel(string nome_var);
@@ -45,7 +41,6 @@ string acessar_variavel(string nome_var);
 
 map<string,int> variaveis_globais;
 map<string, map<string,int>> variaveis_locais;
-
 string undefined = "undefined";
 string retorno_padrao = undefined + " @" + " '&retorno'" + " @" + " ~";
 
@@ -56,31 +51,19 @@ bool escopo_local = false;
 
 string funcao = "";
 string id = "";
-int args = 0;
 
 struct Atributos {
-    string codigo;
+    string valor;
     string retorno;
     int parametros;
-    vector<string> argumentos;
-    
-    Atributos() : codigo(""), retorno(""), parametros(0) {}
+    vector<string> args_value;
 
-    void adicionar_codigo(const string& cod) {
-        codigo += cod + " ";
-    }
+    Atributos() : valor(""), retorno(""), parametros(0) {}
 
-    void adicionar_argumento(const string& arg) {
-        argumentos.push_back(arg);
-    }
-
-    string obter_retorno() const {
-        return retorno.empty() ? "" : retorno;
+    string getRetorno() const {
+        return (retorno == " " + valor) ? "" : retorno;
     }
 };
-
-
-
 %}
 
 %token _INT _FLOAT _STRING _STRING2
@@ -92,196 +75,196 @@ struct Atributos {
 
 %%
 
-Atribuicao_Objeto2      : Objeto '=' Atribuicao_Objeto2  {$$.codigo = $1.codigo + $3.codigo + " " + $1.codigo + "[@] [=] ^ ";}
-                        | Conta                          {$$.codigo = $1.codigo + "[=] ^ ";}
+Atribuicao_Objeto2      : Objeto '=' Atribuicao_Objeto2  {$$.valor = $1.valor + $3.valor + " " + $1.valor + "[@] [=] ^ ";}
+                        | Conta                          {$$.valor = $1.valor + "[=] ^ ";}
                         ;
 
-Atribuicao_Objeto       : '=' Atribuicao_Objeto2    {$$.codigo = $2.codigo;}   
-                        |                           {$$.codigo = "[@] ";}
+Atribuicao_Objeto       : '=' Atribuicao_Objeto2    {$$.valor = $2.valor;}   
+                        |                           {$$.valor = "[@] ";}
                         ;
 
-Atribuicao_MIGUAL       : '=' Conta      {$$.codigo = $2.codigo + " + = ^ ";}
+Atribuicao_MIGUAL       : '=' Conta      {$$.valor = $2.valor + " + = ^ ";}
                         ;
 
-AtribuicaoObj_MIGUAL    : '=' Conta      {$$.codigo = $2.codigo + " + [=] ^ ";}
+AtribuicaoObj_MIGUAL    : '=' Conta      {$$.valor = $2.valor + " + [=] ^ ";}
                         ;
 
-Atribuicao_ID2 : _ID '=' Atribuicao_ID2  {$$.codigo = $1.codigo + $3.codigo + acessar_variavel($1.codigo) + "= ^ ";}
-               | Conta                   {$$.codigo = $1.codigo + "= ^ ";}
+Atribuicao_ID2 : _ID '=' Atribuicao_ID2  {$$.valor = $1.valor + $3.valor + acessar_variavel($1.valor) + "= ^ ";}
+               | Conta                   {$$.valor = $1.valor + "= ^ ";}
                ;
 
-Atribuicao_ID   : '=' Atribuicao_ID2      {$$.codigo = " " + $2.codigo;}
-                |                         {string space = " ";$$.codigo = " @" + space;}
+Atribuicao_ID   : '=' Atribuicao_ID2      {$$.valor = " " + $2.valor;}
+                |                         {string space = " ";$$.valor = " @" + space;}
                 ;
 
-Conta_Simples :   '-' Termo Conta_Simples               {$$.codigo = $2.codigo + "- " + $3.codigo;} 
-              |   '+' Termo Conta_Simples               {$$.codigo = $2.codigo + "+ " + $3.codigo;} 
-              |   '>' Termo Conta_Simples               {$$.codigo = $2.codigo + $3.codigo + "> ";}
-              |   '<' Termo Conta_Simples               {$$.codigo = $2.codigo + $3.codigo + "< ";}
-              |   _IGUAL Termo Conta_Simples               {$$.codigo = $2.codigo + $3.codigo + "== ";}
-              |                                         {$$.codigo = "";}
+Conta_Simples :   '-' Termo Conta_Simples               {$$.valor = $2.valor + "- " + $3.valor;} 
+              |   '+' Termo Conta_Simples               {$$.valor = $2.valor + "+ " + $3.valor;} 
+              |   '>' Termo Conta_Simples               {$$.valor = $2.valor + $3.valor + "> ";}
+              |   '<' Termo Conta_Simples               {$$.valor = $2.valor + $3.valor + "< ";}
+              |   _IGUAL Termo Conta_Simples               {$$.valor = $2.valor + $3.valor + "== ";}
+              |                                         {$$.valor = "";}
               ;
 
-Conta_Complexa2   :   '^' Termo {$$.codigo = " " + $2.codigo + " ^";} 
-                  |   '!' Termo {$$.codigo = " fat #" + $2.codigo;}
-                  |             {$$.codigo = "";}  
+Conta_Complexa2   :   '^' Termo {$$.valor = " " + $2.valor + " ^";} 
+                  |   '!' Termo {$$.valor = " fat #" + $2.valor;}
+                  |             {$$.valor = "";}  
                   ;
 
-Conta_Complexa    :   '*' Membro Conta_Complexa2 Conta_Complexa {$$.codigo = $2.codigo + $3.codigo + "* " + $4.codigo;}
-                  |   '/' Termo                                 {$$.codigo = $2.codigo + "/ ";}
-                  |   '%' Membro Conta_Complexa2 Conta_Complexa {$$.codigo = $2.codigo + $3.codigo + "% " + $4.codigo;}
-                  |   Conta_Complexa2                           {$$.codigo = $1.codigo;}
-                  |                                             {$$.codigo = "";}
+Conta_Complexa    :   '*' Membro Conta_Complexa2 Conta_Complexa {$$.valor = $2.valor + $3.valor + "* " + $4.valor;}
+                  |   '/' Termo                                 {$$.valor = $2.valor + "/ ";}
+                  |   '%' Membro Conta_Complexa2 Conta_Complexa {$$.valor = $2.valor + $3.valor + "% " + $4.valor;}
+                  |   Conta_Complexa2                           {$$.valor = $1.valor;}
+                  |                                             {$$.valor = "";}
                   ;
 
-Declaracao_Complexa     :  Declaracao_Simples                   {$$.codigo = $1.codigo; $$.argumentos = $1.argumentos;}
-                        | ',' _ID '=' Conta Declaracao_Complexa {$$.codigo = declarar($2.codigo) + $2.codigo + " " + $4.codigo + "= ^ "+ $5.codigo;}
-                        |                                       {$$.codigo = "";}
+Declaracao_Complexa     :  Declaracao_Simples                   {$$.valor = $1.valor; $$.args_value = $1.args_value;}
+                        | ',' _ID '=' Conta Declaracao_Complexa {$$.valor = declarar($2.valor) + $2.valor + " " + $4.valor + "= ^ "+ $5.valor;}
+                        |                                       {$$.valor = "";}
                         ;
 
-Declaracao_Simples  : ',' _ID Declaracao_Simples  {$$.codigo = declarar($2.codigo) + $3.codigo; $3.argumentos.push_back($2.codigo); $$.argumentos = $3.argumentos;}
-                    |                             {$$.codigo = ""; }
+Declaracao_Simples  : ',' _ID Declaracao_Simples  {$$.valor = declarar($2.valor) + $3.valor; $3.args_value.push_back($2.valor); $$.args_value = $3.args_value;}
+                    |                             {$$.valor = ""; }
                     ;
 
-Expressao_Declaracao  : _ID  '=' Conta Declaracao_Complexa    {$$.codigo = declarar($1.codigo) + $1.codigo + " " + $3.codigo + "= ^ " + $4.codigo;}
-                      | _ID  Declaracao_Complexa              {$$.codigo = declarar($1.codigo) + $2.codigo; $2.argumentos.push_back($1.codigo); $$.argumentos = $2.argumentos;}
+Expressao_Declaracao  : _ID  '=' Conta Declaracao_Complexa    {$$.valor = declarar($1.valor) + $1.valor + " " + $3.valor + "= ^ " + $4.valor;}
+                      | _ID  Declaracao_Complexa              {$$.valor = declarar($1.valor) + $2.valor; $2.args_value.push_back($1.valor); $$.args_value = $2.args_value;}
                       ;
 
-Declaracao  : _LET   {declaracao = $1.codigo;} Expressao_Declaracao    {$$.codigo = $3.codigo;}
-            | _CONST {declaracao = $1.codigo;} Expressao_Declaracao    {$$.codigo = $3.codigo;}
-            | _VAR   {declaracao = $1.codigo;} Expressao_Declaracao    {$$.codigo = $3.codigo;}
-            |                                 {$$.codigo = "";}
+Declaracao  : _LET   {declaracao = $1.valor;} Expressao_Declaracao    {$$.valor = $3.valor;}
+            | _CONST {declaracao = $1.valor;} Expressao_Declaracao    {$$.valor = $3.valor;}
+            | _VAR   {declaracao = $1.valor;} Expressao_Declaracao    {$$.valor = $3.valor;}
+            |                                 {$$.valor = "";}
             ;
 
-Membro_Simples  :   _STRING        {$$.codigo = $1.codigo + " ";}
-                |   _INT           {$$.codigo = $1.codigo + " ";}
-                |   _FLOAT         {$$.codigo = $1.codigo + " ";}
-                |  _NOVO_OBJETO    {$$.codigo = "{} ";}
-                |  _ARRAY          {$$.codigo = "[] ";}
+Membro_Simples  :   _STRING        {$$.valor = $1.valor + " ";}
+                |   _INT           {$$.valor = $1.valor + " ";}
+                |   _FLOAT         {$$.valor = $1.valor + " ";}
+                |  _NOVO_OBJETO      {$$.valor = "{} ";}
+                |  _ARRAY          {$$.valor = "[] ";}
                 ;
 
-Dimensoes       :   '[' Conta ']' Dimensoes {$$.adicionar_codigo("[@] " + $2.codigo + $2.obter_retorno() + $4.codigo);}
-                |                           {$$.codigo = "";}
+Dimensoes       :   '[' Conta ']' Dimensoes {$$.valor ="[@] " + $2.valor + $2.getRetorno() + $4.valor;}
+                |                           {$$.valor = "";}
                 ;
 
 
-Array   :       _ID  '[' Conta ']'                         {$$.codigo = acessar_objeto($1.codigo) + $3.codigo;}  
-        |       _ID  '[' Conta ']'  Dimensoes              {$$.codigo = acessar_campo($1.codigo, $3.codigo) + $3.obter_retorno() + $5.codigo;}
-        |       '(' _ID ')'  '[' Conta ']'  Dimensoes      {$$.codigo = acessar_campo($2.codigo, $5.codigo) + $5.obter_retorno() + $7.codigo;}
+Array   :       _ID  '[' Conta ']'                         {$$.valor = acessar_objeto($1.valor) + $3.valor;}  
+        |       _ID  '[' Conta ']'  Dimensoes              {$$.valor = acessar_campo($1.valor, $3.valor) + $3.getRetorno() + $5.valor;}
+        |       '(' _ID ')'  '[' Conta ']'  Dimensoes      {$$.valor = acessar_campo($2.valor, $5.valor) + $5.getRetorno() + $7.valor;}
         ;
 
-Campo_Objeto    :  Array                             {$$.codigo = $1.codigo;}
-                |  _ID                               {$$.codigo = $1.codigo + " ";}
+Campo_Objeto    :  Array                             {$$.valor = $1.valor;}
+                |  _ID                               {$$.valor = $1.valor + " ";}
                 ;
 
-Continuacao_Objeto      :   Campo_Objeto  Continuacao_Objeto          {$$.codigo = $1.codigo + $2.codigo;}
-                        |   Array                                     {$$.codigo = $1.codigo;}
-                        |   '.'  Campo_Objeto Continuacao_Objeto      {string space = " ";$$.codigo = " [@]" + space + $2.codigo + $3.codigo;}
-                        |                                             {$$.codigo = "";}
+Continuacao_Objeto      :   Campo_Objeto  Continuacao_Objeto          {$$.valor = $1.valor + $2.valor;}
+                        |   Array                                     {$$.valor = $1.valor;}
+                        |   '.'  Campo_Objeto Continuacao_Objeto      {string space = " ";$$.valor = " [@]" + space + $2.valor + $3.valor;}
+                        |                                             {$$.valor = "";}
                         ;
 
-Objeto  :   _ID  '.' Continuacao_Objeto                        {$$.codigo = acessar_campo($1.codigo, $3.codigo);}
-        |   '(' _ID  ')' '.' Continuacao_Objeto                {$$.codigo = acessar_campo($2.codigo, $5.codigo);}
-        |   Array                                              {$$.codigo = $1.codigo;}
-        |   '(' Objeto ')' Dimensoes                           {$$.codigo = $2.codigo + $4.codigo;}
+Objeto  :   _ID  '.' Continuacao_Objeto                        {$$.valor = acessar_campo($1.valor, $3.valor);}
+        |   '(' _ID  ')' '.' Continuacao_Objeto                {$$.valor = acessar_campo($2.valor, $5.valor);}
+        |   Array                                              {$$.valor = $1.valor;}
+        |   '(' Objeto ')' Dimensoes                           {$$.valor = $2.valor + $4.valor;}
         ;
 
-Casos_ID        : _ID _CONCAT          Atribuicao_MIGUAL   {$$.codigo = $1.codigo + acessar_variavel($1.codigo) + $3.codigo;}
-                | _ID _MAISMAIS      Conta_Simples       {$$.codigo = $1.codigo + " @" + $3.codigo + " " + $1.codigo + " " + acessar_variavel($1.codigo) + "1 + = ^ ";}
-                | _ID Funcao                             {$$.codigo = $2.codigo + acessar_variavel($1.codigo) + "$ ";}
-                | '(' _ID ')' Funcao                     {$$.codigo = $4.codigo + acessar_variavel($2.codigo) + "$ ";}
-                | _ID Atribuicao_ID                      {check_var($1.codigo);$$.codigo = $1.codigo + $2.codigo; $$.retorno = $2.codigo == " @ "? "" : acessar_variavel($1.codigo);}
+Casos_ID        : _ID _CONCAT          Atribuicao_MIGUAL   {$$.valor = $1.valor + acessar_variavel($1.valor) + $3.valor;}
+                | _ID _MAISMAIS      Conta_Simples       {$$.valor = $1.valor + " @" + $3.valor + " " + $1.valor + " " + acessar_variavel($1.valor) + "1 + = ^ ";}
+                | _ID Funcao                             {$$.valor = $2.valor + acessar_variavel($1.valor) + "$ ";}
+                | '(' _ID ')' Funcao                     {$$.valor = $4.valor + acessar_variavel($2.valor) + "$ ";}
+                | _ID Atribuicao_ID                      {checkVar($1.valor);$$.valor = $1.valor + $2.valor; $$.retorno = $2.valor == " @ "? "" : acessar_variavel($1.valor);}
                 ;
 
-Casos_Objeto    : Objeto    Atribuicao_Objeto                       {$$.codigo = $1.codigo + $2.codigo;}
-                | Objeto   _CONCAT               AtribuicaoObj_MIGUAL {$$.codigo = $1.codigo + " " + acessar_objeto($1.codigo) + $3.codigo;}
-                | Objeto   _MAISMAIS                                {$$.codigo = $1.codigo + acessar_variavel($1.codigo) + "1 + [=] ^ " + acessar_variavel($1.codigo);}
-                | Objeto   Funcao                                   {$$.codigo = $2.codigo + $1.codigo + "[@] $ ";}
+Casos_Objeto    : Objeto    Atribuicao_Objeto                       {$$.valor = $1.valor + $2.valor;}
+                | Objeto   _CONCAT               AtribuicaoObj_MIGUAL {$$.valor = $1.valor + " " + acessar_objeto($1.valor) + $3.valor;}
+                | Objeto   _MAISMAIS                                {$$.valor = $1.valor + acessar_variavel($1.valor) + "1 + [=] ^ " + acessar_variavel($1.valor);}
+                | Objeto   Funcao                                   {$$.valor = $2.valor + $1.valor + "[@] $ ";}
                 ;
 
-Membro  :   Membro_Simples                        {$$.codigo = $1.codigo;}      
-        |   Casos_Objeto                          {$$.codigo = $1.codigo;}
-        |   Casos_ID                              {$$.codigo = $1.codigo; $$.retorno=$1.retorno;}
-        |   Funcao                                {$$.codigo = $1.codigo;}
-        |   '+'    Conta                          {$$.codigo = $2.codigo;}
-        |   '-'    Termo                          {$$.codigo = "0 " + $2.codigo + "- ";}  
-        |   '('    Conta ')' Membro               {$$.codigo = $2.codigo;}
-        |   _BOLEANO                              {$$.codigo = $1.codigo + " ";}
+Membro  :   Membro_Simples                        {$$.valor = $1.valor;}      
+        |   Casos_Objeto                          {$$.valor = $1.valor;}
+        |   Casos_ID                              {$$.valor = $1.valor; $$.retorno=$1.retorno;}
+        |   Funcao                                {$$.valor = $1.valor;}
+        |   '+'    Conta                          {$$.valor = $2.valor;}
+        |   '-'    Termo                          {$$.valor = "0 " + $2.valor + "- ";}  
+        |   '('    Conta ')' Membro               {$$.valor = $2.valor;}
+        |   _BOLEANO                              {$$.valor = $1.valor + " ";}
         ;
 
-Termo :   Membro  Conta_Complexa  {$$.codigo = $1.codigo + $2.codigo;$$.retorno=$1.retorno;}
+Termo :   Membro  Conta_Complexa  {$$.valor = $1.valor + $2.valor;$$.retorno=$1.retorno;}
       ;
 
-Conta   :   Termo   Conta_Simples {$$.codigo = $1.codigo + $2.codigo;$$.retorno=$1.retorno;}          
+Conta   :   Termo   Conta_Simples {$$.valor = $1.valor + $2.valor;$$.retorno=$1.retorno;}          
         ;
 
-Argumentos  : Conta Argumentos    {$$.codigo = $1.codigo + $1.obter_retorno() + $2.codigo; $$.parametros = 1 + $2.parametros;}
-            | ','  Argumentos     {$$.codigo = $2.codigo; $$.parametros = $2.parametros;}
-            |                     {$$.codigo = ""; $$.parametros = 0;}
+Argumentos  : Conta Argumentos    {$$.valor = $1.valor + $1.getRetorno() + $2.valor; $$.parametros = 1 + $2.parametros;}
+            | ','  Argumentos     {$$.valor = $2.valor; $$.parametros = $2.parametros;}
+            |                     {$$.valor = ""; $$.parametros = 0;}
             ;
 
-Parametros : Expressao_Declaracao {$$.codigo = declarar_arg($1.argumentos);}
-           |                      {$$.codigo = "";}
+Parametros : Expressao_Declaracao {$$.valor = declarar_arg($1.args_value);}
+           |                      {$$.valor = "";}
            ;
 
-Bloco_Funcao : '{' Continuacao Retorno '}' {$$.codigo = $2.codigo + $3.codigo;}
+Bloco_Funcao : '{' Continuacao Retorno '}' {$$.valor = $2.valor + $3.valor;}
              ;
 
-Retorno : _RETURN Conta {$$.codigo = $2.codigo + acessar_variavel("'&retorno'") + "~ " + retorno_padrao;}
-        |               {$$.codigo = retorno_padrao;}
+Retorno : _RETURN Conta {$$.valor = $2.valor + acessar_variavel("'&retorno'") + "~ " + retorno_padrao;}
+        |               {$$.valor = retorno_padrao;}
         ;
 
-Funcao  : _FUNCTION _ID {funcao = $2.codigo; escopo_local = true;} '(' Parametros ')' Bloco_Funcao {$$.codigo = declara_funcao($2.codigo, $5.codigo, $7.codigo);}
-        | '(' Argumentos ')'                      {$$.codigo = $2.codigo + to_string($2.parametros) + " ";}
+Funcao  : _FUNCTION _ID {funcao = $2.valor; escopo_local = true;} '(' Parametros ')' Bloco_Funcao {$$.valor = declara_funcao($2.valor, $5.valor, $7.valor);}
+        | '(' Argumentos ')'                      {$$.valor = $2.valor + to_string($2.parametros) + " ";}
         ;
 
-Jump_IF    : Expressao ';' SENAO           {contador++;$$.codigo = $3.codigo + jumpComandos("end_if", "then_") + $1.codigo + enderecoResolvido("end_if") + " ";}
-           | Bloco SENAO                   {contador++;$$.codigo = $2.codigo + jumpComandos("end_if", "then_") + $1.codigo + enderecoResolvido("end_if") + " ";}
+Jump_IF    : Expressao ';' SENAO           {contador++;$$.valor = $3.valor + jumpComandos("end_if", "then_") + $1.valor + enderecoResolvido("end_if") + " ";}
+           | Bloco SENAO                   {contador++;$$.valor = $2.valor + jumpComandos("end_if", "then_") + $1.valor + enderecoResolvido("end_if") + " ";}
            ;
 
-Jump_While      : Expressao ';'            {contador++;$$.codigo = jumpComandos("end_while", "whilec_") + $1.codigo + " " + jumpComandos("while_", "end_while");}
-                | Bloco                    {contador++;$$.codigo = jumpComandos("end_while", "whilec_") + $1.codigo + " " + jumpComandos("while_", "end_while");}
+Jump_While      : Expressao ';'            {contador++;$$.valor = jumpComandos("end_while", "whilec_") + $1.valor + " " + jumpComandos("while_", "end_while");}
+                | Bloco                    {contador++;$$.valor = jumpComandos("end_while", "whilec_") + $1.valor + " " + jumpComandos("while_", "end_while");}
                 ;
 
-Jump_For        : Expressao ';'            {contador++;$$.codigo = jumpComandos("end_for", "forc_") + $1.codigo;}
-                | Bloco                    {contador++;$$.codigo = jumpComandos("end_for", "forc_") + $1.codigo;}
+Jump_For        : Expressao ';'            {contador++;$$.valor = jumpComandos("end_for", "forc_") + $1.valor;}
+                | Bloco                    {contador++;$$.valor = jumpComandos("end_for", "forc_") + $1.valor;}
                 | 
                 ;       
 
-SENAO   :  _ELSE Continuacao  {$$.codigo = $2.codigo;}
-        |                     {$$.codigo = "";}
+SENAO   :  _ELSE Continuacao  {$$.valor = $2.valor;}
+        |                     {$$.valor = "";}
         ;
 
-Comando :  _IF   '(' Expressao ')'  Jump_IF                              {$$.codigo = $3.codigo + enderecoPraFrente("then_") + " ?" + $5.codigo;}
-        |  _FOR  '(' Expressao ';'  Expressao ';' Expressao ')' Jump_For {$$.codigo = $3.codigo + " " + enderecoResolvido("for_") + " " + $5.codigo + " " + enderecoPraFrente("forc_") + " ?" + $9.codigo + " " + $7.codigo + " " + enderecoPraFrente("for_") + " # " + enderecoResolvido("end_for");}
-        | _WHILE '(' Expressao ')'  Jump_While                           {$$.codigo = enderecoResolvido("while_") + " " + $3.codigo + " " + enderecoPraFrente("whilec_") + " ?" + $5.codigo;}
+Comando :  _IF   '(' Expressao ')'  Jump_IF                              {$$.valor = $3.valor + enderecoPraFrente("then_") + " ?" + $5.valor;}
+        |  _FOR  '(' Expressao ';'  Expressao ';' Expressao ')' Jump_For {$$.valor = $3.valor + " " + enderecoResolvido("for_") + " " + $5.valor + " " + enderecoPraFrente("forc_") + " ?" + $9.valor + " " + $7.valor + " " + enderecoPraFrente("for_") + " # " + enderecoResolvido("end_for");}
+        | _WHILE '(' Expressao ')'  Jump_While                           {$$.valor = enderecoResolvido("while_") + " " + $3.valor + " " + enderecoPraFrente("whilec_") + " ?" + $5.valor;}
         ;
 
-Retorno_Comandos : _RETURN Conta {$$.codigo = $2.codigo + acessar_variavel("'&retorno'") + "~ ";}
-                 |               {$$.codigo = "";}
+Retorno_Comandos : _RETURN Conta {$$.valor = $2.valor + acessar_variavel("'&retorno'") + "~ ";}
+                 |               {$$.valor = "";}
                  ;
 
-Bloco : '{' {escopo_local = true; funcao = "local" + to_string(locais++);} Continuacao Retorno_Comandos'}' {escopo_local=false;$$.codigo = "<{ " +  $3.codigo + $4.codigo + "}> ";}
-      | Retorno_Comandos                    {$$.codigo = $1.codigo;}
+Bloco : '{' {escopo_local = true; funcao = "local" + to_string(locais++);} Continuacao Retorno_Comandos'}' {escopo_local=false;$$.valor = "<{ " +  $3.valor + $4.valor + "}> ";}
+      | Retorno_Comandos                    {$$.valor = $1.valor;}
       ;
 
-Expressao       :   Declaracao                     {$$.codigo = $1.codigo;}
-                |   _ID      Funcao      Expressao          {$$.codigo = $2.codigo + acessar_variavel($1.codigo) + "$ ^ " + $3.codigo;}
-                | '(' _ID ')' Funcao     Expressao          {$$.codigo = $4.codigo + acessar_variavel($2.codigo) + "$ ^ " + $5.codigo;}
-                |   Objeto   Funcao      Expressao          {$$.codigo = $2.codigo + $1.codigo + "[@] $ ^ " + $3.codigo;}
-                |   Conta   Expressao              {$$.codigo = $1.codigo + $2.codigo;}
-                |   Bloco   Expressao              {$$.codigo = $1.codigo + $2.codigo;}
-                |   _ASM                           {$$.codigo = asm_trim($1.codigo);}
+Expressao       :   Declaracao                     {$$.valor = $1.valor;}
+                |   _ID      Funcao      Expressao          {$$.valor = $2.valor + acessar_variavel($1.valor) + "$ ^ " + $3.valor;}
+                | '(' _ID ')' Funcao     Expressao          {$$.valor = $4.valor + acessar_variavel($2.valor) + "$ ^ " + $5.valor;}
+                |   Objeto   Funcao      Expressao          {$$.valor = $2.valor + $1.valor + "[@] $ ^ " + $3.valor;}
+                |   Conta   Expressao              {$$.valor = $1.valor + $2.valor;}
+                |   Bloco   Expressao              {$$.valor = $1.valor + $2.valor;}
+                |   _ASM                           {$$.valor = asm_trim($1.valor);}
                 ;
 
-Continuacao  : Expressao ';' Continuacao         {$$.codigo = $1.codigo + $3.codigo;}
-             | Comando    Continuacao            {$$.codigo = $1.codigo + $2.codigo;}
-             | ';'   Continuacao                 {$$.codigo = $2.codigo;}         
-             |                                   {$$.codigo = "";}
+Continuacao  : Expressao ';' Continuacao         {$$.valor = $1.valor + $3.valor;}
+             | Comando    Continuacao            {$$.valor = $1.valor + $2.valor;}
+             | ';'   Continuacao                 {$$.valor = $2.valor;}         
+             |                                   {$$.valor = "";}
              ;
 
-S :   Expressao ';' Continuacao         {exibir_codigo_processado($1.codigo + $3.codigo + "." + funcoes);}
-        |   Comando       Continuacao         {exibir_codigo_processado($1.codigo + $2.codigo + "." + funcoes);}
+S :   Expressao ';' Continuacao         {exibir_codigo_processado($1.valor + $3.valor + "." + funcoes);}
+        |   Comando       Continuacao         {exibir_codigo_processado($1.valor + $2.valor + "." + funcoes);}
         ;  
 %%
 
@@ -293,9 +276,8 @@ string declara_funcao(string nome, string parametros, string corpo){
         funcao = "";
         string label = enderecoPraFrente(nome);
         funcoes = funcoes + " " + enderecoResolvido(nome) + " " + parametros + corpo;
-        set_var(nome);
+        setVar(nome);
         return nome + " & " + nome + " {} = '&funcao' " + label + " [=] ^ ";
-
 }
 
 string asm_trim(string asm_command){
@@ -317,9 +299,8 @@ string acessar_campo(string nome_objeto, string campo){
         return nome_objeto + " @" + campo;
 }
 
-
 string declarar(string var){
-        set_var(var);
+        setVar(var);
         if(declaracao == "var" && declaracaoAntecedente){
                 declaracaoAntecedente = 0;
                 return "";
@@ -341,7 +322,6 @@ string declarar_arg(vector<string> args){
         return result + " ";
 }
 
-
 string enderecoPraFrente(string nome){
         return ":" + nome + to_string(contador);
 }
@@ -354,7 +334,7 @@ string jumpComandos(string label_endereco_final, string label_endereco_corpo){
         return enderecoPraFrente(label_endereco_final) + " # " + enderecoResolvido(label_endereco_corpo) + " ";
 }
 
-void set_var(string var){
+void setVar(string var){
         map<string,int>::iterator it;
 
         int linhaAtual = linha + 1;
@@ -372,16 +352,15 @@ void set_var(string var){
                 }
                 variaveis_globais[var] = linhaAtual;
         }        
-
 }
 
-void check_var(string var){
+void checkVar(string var){
         map<string,int>::iterator it;
         if(escopo_local){
                 map<string, int> vars = variaveis_locais[funcao];
                 for (it = vars.begin(); it != vars.end(); ++it){
                         if(var == it->first) return;
-                } 
+                }   
         }else{
                 for (it = variaveis_globais.begin(); it != variaveis_globais.end(); ++it){
                         if(var == it->first) return;
@@ -403,8 +382,7 @@ string printToken(int numToken, string tk){
         return "";
 }
 
-void exibir_codigo_processado(string codigo){
-        
+void exibir_codigo_processado(string valor){
    int pc_nolabel = 0;
    bool palavra = false;
    bool palavra2 = false;
@@ -414,20 +392,20 @@ void exibir_codigo_processado(string codigo){
    string label_in_process = "";
    string tk = "";
 
-   for(int pc = 0; pc != codigo.size() ; pc++) {
+   for(int pc = 0; pc != valor.size() ; pc++) {
      
-        if(codigo[pc] == ';'){
+        if(valor[pc] == ';'){
                 label = true;
-                tk += codigo[pc];
+                tk += valor[pc];
                 continue;
         }
 
-        if(codigo[pc] == '"' || codigo[pc] == '\''){
+        if(valor[pc] == '"' || valor[pc] == '\''){
                 palavra = !palavra;
         }
 
         if(label){
-                if(codigo[pc] == ' '){
+                if(valor[pc] == ' '){
                         label = false;
                         instPC[label_in_process] = pc_nolabel;
                         
@@ -435,41 +413,41 @@ void exibir_codigo_processado(string codigo){
                         tk = printToken(pc_nolabel, tk);
                         pc_nolabel++;
                 }else{
-                        label_in_process += codigo[pc];
-                        tk += codigo[pc];
+                        label_in_process += valor[pc];
+                        tk += valor[pc];
                 }
 
                 continue;       
         }
         
-        if(codigo[pc] == ' ' && !palavra && tk != "println" && tk != "println #") {
+        if(valor[pc] == ' ' && !palavra && tk != "println" && tk != "println #") {
                 tk = printToken(pc_nolabel, tk);
                 pc_nolabel++;
                 continue;
         }
 
-        tk += codigo[pc];
+        tk += valor[pc];
 
    }
 
    map<string,int>::iterator it;
    for(it=instPC.begin(); it!=instPC.end(); ++it){
-      ReplaceStringInPlace(codigo, ":" + it->first, to_string(it->second)); 
-      ReplaceStringInPlace(codigo, ";" + it->first + " ", ""); 
+      ReplaceStringInPlace(valor, ":" + it->first, to_string(it->second)); 
+      ReplaceStringInPlace(valor, ";" + it->first + " ", ""); 
    }
         
-   cout << codigo;
+   cout << valor;
 
 }
 
 void exibir_erro( string msg ) {
-  cout << "Erro: " << msg;
+  cout << "Erro: " << msg << endl;
   exit(0); 
 }
 
 
 int token( int tk ) {  
-  yylval.codigo = yytext; 
+  yylval.valor = yytext; 
 
   return tk;
 }
