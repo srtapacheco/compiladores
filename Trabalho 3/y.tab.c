@@ -67,11 +67,9 @@
 
 
 /* First part of user prologue.  */
-#line 1 "miniJS.y"
+#line 1 "mini_js.y"
 
-
-extern "C" int yylex();  
-
+extern "C" int yylex();
 
 #include <iostream>
 #include <string>
@@ -83,22 +81,20 @@ extern "C" int yylex();
 
 using namespace std;
 
-int contador = 0, linha = 0, coluna = 1, locais = 0, declaracaoAntecedente = 0;
+int contador = 0, linha = 0, coluna = 1, args = 0, locais = 0, declaracaoAntecedente = 0;
 
 string declaracao = "";
 
 int token(int tk);
 
-void exibir_codigo_processado(string codigo);
-void exibir_erro(string codigo);
+void exibir_codigo_processado(string valor);
+void exibir_erro(string valor);
 
 int yyparse();
 void yyerror(const char *);
 
-void set_var(string var);
-void check_var(string var);
-
-
+void setVar(string var);
+void checkVar(string var);
 string enderecoPraFrente(string nome);
 string enderecoResolvido(string nome);
 string declarar(string var);
@@ -106,7 +102,7 @@ string declarar_arg(vector<string> args);
 string acessar_campo(string nome_objeto, string campo);
 string acessar_objeto(string nome_var);
 string jumpComandos(string label_endereco_final, string label_endereco_corpo);
-void ReplaceStringInPlace(std::string& subject, const std::string& search,const std::string& replace);
+void ReplaceStringInPlace(std::string& subject, const std::string& search, const std::string& replace);
 string asm_trim(string asm_command);
 string declara_funcao(string nome, string parametros, string corpo);
 string acessar_variavel(string nome_var);
@@ -115,7 +111,6 @@ string acessar_variavel(string nome_var);
 
 map<string,int> variaveis_globais;
 map<string, map<string,int>> variaveis_locais;
-
 string undefined = "undefined";
 string retorno_padrao = undefined + " @" + " '&retorno'" + " @" + " ~";
 
@@ -126,33 +121,21 @@ bool escopo_local = false;
 
 string funcao = "";
 string id = "";
-int args = 0;
 
 struct Atributos {
-    string codigo;
+    string valor;
     string retorno;
     int parametros;
-    vector<string> argumentos;
-    
-    Atributos() : codigo(""), retorno(""), parametros(0) {}
+    vector<string> args_value;
 
-    void adicionar_codigo(const string& cod) {
-        codigo += cod + " ";
-    }
+    Atributos() : valor(""), retorno(""), parametros(0) {}
 
-    void adicionar_argumento(const string& arg) {
-        argumentos.push_back(arg);
-    }
-
-    string obter_retorno() const {
-        return retorno.empty() ? "" : retorno;
+    string getRetorno() const {
+        return (retorno == " " + valor) ? "" : retorno;
     }
 };
 
-
-
-
-#line 156 "y.tab.c"
+#line 139 "y.tab.c"
 
 # ifndef YY_CAST
 #  ifdef __cplusplus
@@ -700,7 +683,7 @@ union yyalloc
 /* YYNNTS -- Number of nonterminals.  */
 #define YYNNTS  45
 /* YYNRULES -- Number of rules.  */
-#define YYNRULES  119
+#define YYNRULES  118
 /* YYNSTATES -- Number of states.  */
 #define YYNSTATES  231
 
@@ -754,18 +737,18 @@ static const yytype_int8 yytranslate[] =
 /* YYRLINE[YYN] -- Source line where rule number YYN was defined.  */
 static const yytype_int16 yyrline[] =
 {
-       0,    95,    95,    96,    99,   100,   103,   106,   109,   110,
-     113,   114,   117,   118,   119,   120,   121,   122,   125,   126,
-     127,   130,   131,   132,   133,   134,   137,   138,   139,   142,
-     143,   146,   147,   150,   150,   151,   151,   152,   152,   153,
-     156,   157,   158,   159,   160,   163,   164,   168,   169,   170,
-     173,   174,   177,   178,   179,   180,   183,   184,   185,   186,
-     189,   190,   191,   192,   193,   196,   197,   198,   199,   202,
-     203,   204,   205,   206,   207,   208,   209,   212,   215,   218,
-     219,   220,   223,   224,   227,   230,   231,   234,   234,   235,
-     238,   239,   242,   243,   246,   247,   248,   251,   252,   255,
-     256,   257,   260,   261,   264,   264,   265,   268,   269,   270,
-     271,   272,   273,   274,   277,   278,   279,   280,   283,   284
+       0,    78,    78,    79,    82,    83,    86,    89,    92,    93,
+      96,    97,   100,   101,   102,   103,   104,   105,   108,   109,
+     110,   113,   114,   115,   116,   117,   120,   121,   122,   125,
+     126,   129,   130,   133,   133,   134,   134,   135,   135,   136,
+     139,   140,   141,   142,   143,   146,   147,   151,   152,   153,
+     156,   157,   160,   161,   162,   163,   166,   167,   168,   169,
+     172,   173,   174,   175,   176,   179,   180,   181,   182,   185,
+     186,   187,   188,   189,   190,   191,   192,   195,   198,   201,
+     202,   203,   206,   207,   210,   213,   214,   217,   217,   218,
+     221,   222,   225,   226,   229,   230,   233,   234,   237,   238,
+     239,   242,   243,   246,   246,   247,   250,   251,   252,   253,
+     254,   255,   256,   259,   260,   261,   262,   265,   266
 };
 #endif
 
@@ -852,28 +835,28 @@ static const yytype_int16 yypact[] =
 static const yytype_int8 yydefact[] =
 {
       39,    41,    42,    40,    11,     0,     0,    33,    35,    37,
-      43,     0,     0,    76,     0,   113,    44,     0,     0,    81,
-     104,   107,    69,    58,     5,    71,    70,    20,    17,    39,
-      72,   117,   106,    39,     0,     0,    17,     0,     0,     0,
+      43,     0,     0,    76,     0,   112,    44,     0,     0,    81,
+     103,   106,    69,    58,     5,    71,    70,    20,    17,    39,
+      72,   116,   105,    39,     0,     0,    17,     0,     0,     0,
       81,    55,    64,    62,    39,    39,     0,     0,     0,    39,
-      87,    11,    81,     5,   102,    74,    73,    11,    81,     5,
-       0,     0,   117,    67,     0,     0,    65,    68,     0,     0,
+      87,    11,    81,     5,   101,    74,    73,    11,    81,     5,
+       0,     0,   116,    67,     0,     0,    65,    68,     0,     0,
        0,     0,     0,    24,    77,     0,     0,     0,     0,     0,
-      78,   111,   117,   117,     0,   119,   112,   117,     1,    61,
+      78,   110,   116,   116,     0,   118,   111,   116,     1,    61,
        0,    60,    11,    10,     9,     0,    81,    51,     0,     0,
-      50,    55,    56,   108,     0,     0,    28,    34,    36,    38,
+      50,    55,    56,   107,     0,     0,    28,    34,    36,    38,
        0,     0,    62,    11,    68,     0,    80,    46,     0,    79,
-      89,   103,     0,    66,     4,     5,     3,   110,    18,    19,
-      20,    22,    20,    17,    17,    17,    17,    17,   116,   115,
-     117,   118,     6,     0,    46,     0,    50,    55,    52,    39,
-     103,     0,     0,    32,    26,   103,    83,     0,     0,    55,
+      89,   102,     0,    66,     4,     5,     3,   109,    18,    19,
+      20,    22,    20,    17,    17,    17,    17,    17,   115,   114,
+     116,   117,     6,     0,    46,     0,    50,    55,    52,    39,
+     102,     0,     0,    32,    26,   102,    83,     0,     0,    55,
       63,     0,    59,    75,     0,     7,     0,    20,    20,    16,
-      12,    13,    14,    15,   114,     8,    48,     0,    54,     0,
-      99,    98,     0,    28,    30,   101,    93,     0,    82,     0,
-      63,     0,    57,   109,     0,   105,     2,    21,    23,    39,
-     117,    91,    98,    31,     0,     0,    29,    92,     0,    46,
-      46,     0,    97,    90,    28,    30,   117,    88,    49,    45,
-      96,    27,    86,   100,    95,     0,     0,     0,    94,    85,
+      12,    13,    14,    15,   113,     8,    48,     0,    54,     0,
+      98,    97,     0,    28,    30,   100,    93,     0,    82,     0,
+      63,     0,    57,   108,     0,   104,     2,    21,    23,    39,
+     116,    91,    97,    31,     0,     0,    29,    92,     0,    46,
+      46,     0,    96,    90,    28,    30,   116,    88,    49,    45,
+     102,    27,    86,    99,    95,     0,     0,     0,    94,    85,
       84
 };
 
@@ -1064,9 +1047,9 @@ static const yytype_int8 yyr1[] =
       71,    71,    71,    71,    71,    72,    72,    72,    72,    73,
       73,    73,    73,    73,    73,    73,    73,    74,    75,    76,
       76,    76,    77,    77,    78,    79,    79,    81,    80,    80,
-      82,    82,    83,    83,    84,    84,    84,    85,    85,    86,
-      86,    86,    87,    87,    89,    88,    88,    90,    90,    90,
-      90,    90,    90,    90,    91,    91,    91,    91,    92,    92
+      82,    82,    83,    83,    84,    84,    85,    85,    86,    86,
+      86,    87,    87,    89,    88,    88,    90,    90,    90,    90,
+      90,    90,    90,    91,    91,    91,    91,    92,    92
 };
 
 /* YYR2[RULE-NUM] -- Number of symbols on the right-hand side of rule RULE-NUM.  */
@@ -1081,9 +1064,9 @@ static const yytype_int8 yyr2[] =
        3,     3,     2,     4,     2,     2,     3,     2,     2,     1,
        1,     1,     1,     2,     2,     4,     1,     2,     2,     2,
        2,     0,     1,     0,     4,     2,     0,     0,     7,     3,
-       3,     2,     2,     1,     2,     1,     0,     2,     0,     5,
-       9,     5,     2,     0,     0,     5,     1,     1,     3,     5,
-       3,     2,     2,     1,     3,     2,     2,     0,     3,     2
+       3,     2,     2,     1,     2,     1,     2,     0,     5,     9,
+       5,     2,     0,     0,     5,     1,     1,     3,     5,     3,
+       2,     2,     1,     3,     2,     2,     0,     3,     2
 };
 
 
@@ -1547,709 +1530,709 @@ yyreduce:
   switch (yyn)
     {
   case 2: /* Atribuicao_Objeto2: Objeto '=' Atribuicao_Objeto2  */
-#line 95 "miniJS.y"
-                                                         {yyval.codigo = yyvsp[-2].codigo + yyvsp[0].codigo + " " + yyvsp[-2].codigo + "[@] [=] ^ ";}
-#line 1553 "y.tab.c"
+#line 78 "mini_js.y"
+                                                         {yyval.valor = yyvsp[-2].valor + yyvsp[0].valor + " " + yyvsp[-2].valor + "[@] [=] ^ ";}
+#line 1536 "y.tab.c"
     break;
 
   case 3: /* Atribuicao_Objeto2: Conta  */
-#line 96 "miniJS.y"
-                                                         {yyval.codigo = yyvsp[0].codigo + "[=] ^ ";}
-#line 1559 "y.tab.c"
+#line 79 "mini_js.y"
+                                                         {yyval.valor = yyvsp[0].valor + "[=] ^ ";}
+#line 1542 "y.tab.c"
     break;
 
   case 4: /* Atribuicao_Objeto: '=' Atribuicao_Objeto2  */
-#line 99 "miniJS.y"
-                                                    {yyval.codigo = yyvsp[0].codigo;}
-#line 1565 "y.tab.c"
+#line 82 "mini_js.y"
+                                                    {yyval.valor = yyvsp[0].valor;}
+#line 1548 "y.tab.c"
     break;
 
   case 5: /* Atribuicao_Objeto: %empty  */
-#line 100 "miniJS.y"
-                                                    {yyval.codigo = "[@] ";}
-#line 1571 "y.tab.c"
+#line 83 "mini_js.y"
+                                                    {yyval.valor = "[@] ";}
+#line 1554 "y.tab.c"
     break;
 
   case 6: /* Atribuicao_MIGUAL: '=' Conta  */
-#line 103 "miniJS.y"
-                                         {yyval.codigo = yyvsp[0].codigo + " + = ^ ";}
-#line 1577 "y.tab.c"
+#line 86 "mini_js.y"
+                                         {yyval.valor = yyvsp[0].valor + " + = ^ ";}
+#line 1560 "y.tab.c"
     break;
 
   case 7: /* AtribuicaoObj_MIGUAL: '=' Conta  */
-#line 106 "miniJS.y"
-                                         {yyval.codigo = yyvsp[0].codigo + " + [=] ^ ";}
-#line 1583 "y.tab.c"
+#line 89 "mini_js.y"
+                                         {yyval.valor = yyvsp[0].valor + " + [=] ^ ";}
+#line 1566 "y.tab.c"
     break;
 
   case 8: /* Atribuicao_ID2: _ID '=' Atribuicao_ID2  */
-#line 109 "miniJS.y"
-                                         {yyval.codigo = yyvsp[-2].codigo + yyvsp[0].codigo + acessar_variavel(yyvsp[-2].codigo) + "= ^ ";}
-#line 1589 "y.tab.c"
+#line 92 "mini_js.y"
+                                         {yyval.valor = yyvsp[-2].valor + yyvsp[0].valor + acessar_variavel(yyvsp[-2].valor) + "= ^ ";}
+#line 1572 "y.tab.c"
     break;
 
   case 9: /* Atribuicao_ID2: Conta  */
-#line 110 "miniJS.y"
-                                         {yyval.codigo = yyvsp[0].codigo + "= ^ ";}
-#line 1595 "y.tab.c"
+#line 93 "mini_js.y"
+                                         {yyval.valor = yyvsp[0].valor + "= ^ ";}
+#line 1578 "y.tab.c"
     break;
 
   case 10: /* Atribuicao_ID: '=' Atribuicao_ID2  */
-#line 113 "miniJS.y"
-                                          {yyval.codigo = " " + yyvsp[0].codigo;}
-#line 1601 "y.tab.c"
+#line 96 "mini_js.y"
+                                          {yyval.valor = " " + yyvsp[0].valor;}
+#line 1584 "y.tab.c"
     break;
 
   case 11: /* Atribuicao_ID: %empty  */
-#line 114 "miniJS.y"
-                                          {string space = " ";yyval.codigo = " @" + space;}
-#line 1607 "y.tab.c"
+#line 97 "mini_js.y"
+                                          {string space = " ";yyval.valor = " @" + space;}
+#line 1590 "y.tab.c"
     break;
 
   case 12: /* Conta_Simples: '-' Termo Conta_Simples  */
-#line 117 "miniJS.y"
-                                                        {yyval.codigo = yyvsp[-1].codigo + "- " + yyvsp[0].codigo;}
-#line 1613 "y.tab.c"
+#line 100 "mini_js.y"
+                                                        {yyval.valor = yyvsp[-1].valor + "- " + yyvsp[0].valor;}
+#line 1596 "y.tab.c"
     break;
 
   case 13: /* Conta_Simples: '+' Termo Conta_Simples  */
-#line 118 "miniJS.y"
-                                                        {yyval.codigo = yyvsp[-1].codigo + "+ " + yyvsp[0].codigo;}
-#line 1619 "y.tab.c"
+#line 101 "mini_js.y"
+                                                        {yyval.valor = yyvsp[-1].valor + "+ " + yyvsp[0].valor;}
+#line 1602 "y.tab.c"
     break;
 
   case 14: /* Conta_Simples: '>' Termo Conta_Simples  */
-#line 119 "miniJS.y"
-                                                        {yyval.codigo = yyvsp[-1].codigo + yyvsp[0].codigo + "> ";}
-#line 1625 "y.tab.c"
+#line 102 "mini_js.y"
+                                                        {yyval.valor = yyvsp[-1].valor + yyvsp[0].valor + "> ";}
+#line 1608 "y.tab.c"
     break;
 
   case 15: /* Conta_Simples: '<' Termo Conta_Simples  */
-#line 120 "miniJS.y"
-                                                        {yyval.codigo = yyvsp[-1].codigo + yyvsp[0].codigo + "< ";}
-#line 1631 "y.tab.c"
+#line 103 "mini_js.y"
+                                                        {yyval.valor = yyvsp[-1].valor + yyvsp[0].valor + "< ";}
+#line 1614 "y.tab.c"
     break;
 
   case 16: /* Conta_Simples: _IGUAL Termo Conta_Simples  */
-#line 121 "miniJS.y"
-                                                           {yyval.codigo = yyvsp[-1].codigo + yyvsp[0].codigo + "== ";}
-#line 1637 "y.tab.c"
+#line 104 "mini_js.y"
+                                                           {yyval.valor = yyvsp[-1].valor + yyvsp[0].valor + "== ";}
+#line 1620 "y.tab.c"
     break;
 
   case 17: /* Conta_Simples: %empty  */
-#line 122 "miniJS.y"
-                                                        {yyval.codigo = "";}
-#line 1643 "y.tab.c"
+#line 105 "mini_js.y"
+                                                        {yyval.valor = "";}
+#line 1626 "y.tab.c"
     break;
 
   case 18: /* Conta_Complexa2: '^' Termo  */
-#line 125 "miniJS.y"
-                                {yyval.codigo = " " + yyvsp[0].codigo + " ^";}
-#line 1649 "y.tab.c"
+#line 108 "mini_js.y"
+                                {yyval.valor = " " + yyvsp[0].valor + " ^";}
+#line 1632 "y.tab.c"
     break;
 
   case 19: /* Conta_Complexa2: '!' Termo  */
-#line 126 "miniJS.y"
-                                {yyval.codigo = " fat #" + yyvsp[0].codigo;}
-#line 1655 "y.tab.c"
+#line 109 "mini_js.y"
+                                {yyval.valor = " fat #" + yyvsp[0].valor;}
+#line 1638 "y.tab.c"
     break;
 
   case 20: /* Conta_Complexa2: %empty  */
-#line 127 "miniJS.y"
-                                {yyval.codigo = "";}
-#line 1661 "y.tab.c"
+#line 110 "mini_js.y"
+                                {yyval.valor = "";}
+#line 1644 "y.tab.c"
     break;
 
   case 21: /* Conta_Complexa: '*' Membro Conta_Complexa2 Conta_Complexa  */
-#line 130 "miniJS.y"
-                                                                {yyval.codigo = yyvsp[-2].codigo + yyvsp[-1].codigo + "* " + yyvsp[0].codigo;}
-#line 1667 "y.tab.c"
+#line 113 "mini_js.y"
+                                                                {yyval.valor = yyvsp[-2].valor + yyvsp[-1].valor + "* " + yyvsp[0].valor;}
+#line 1650 "y.tab.c"
     break;
 
   case 22: /* Conta_Complexa: '/' Termo  */
-#line 131 "miniJS.y"
-                                                                {yyval.codigo = yyvsp[0].codigo + "/ ";}
-#line 1673 "y.tab.c"
+#line 114 "mini_js.y"
+                                                                {yyval.valor = yyvsp[0].valor + "/ ";}
+#line 1656 "y.tab.c"
     break;
 
   case 23: /* Conta_Complexa: '%' Membro Conta_Complexa2 Conta_Complexa  */
-#line 132 "miniJS.y"
-                                                                {yyval.codigo = yyvsp[-2].codigo + yyvsp[-1].codigo + "% " + yyvsp[0].codigo;}
-#line 1679 "y.tab.c"
+#line 115 "mini_js.y"
+                                                                {yyval.valor = yyvsp[-2].valor + yyvsp[-1].valor + "% " + yyvsp[0].valor;}
+#line 1662 "y.tab.c"
     break;
 
   case 24: /* Conta_Complexa: Conta_Complexa2  */
-#line 133 "miniJS.y"
-                                                                {yyval.codigo = yyvsp[0].codigo;}
-#line 1685 "y.tab.c"
+#line 116 "mini_js.y"
+                                                                {yyval.valor = yyvsp[0].valor;}
+#line 1668 "y.tab.c"
     break;
 
   case 25: /* Conta_Complexa: %empty  */
-#line 134 "miniJS.y"
-                                                                {yyval.codigo = "";}
-#line 1691 "y.tab.c"
+#line 117 "mini_js.y"
+                                                                {yyval.valor = "";}
+#line 1674 "y.tab.c"
     break;
 
   case 26: /* Declaracao_Complexa: Declaracao_Simples  */
-#line 137 "miniJS.y"
-                                                                {yyval.codigo = yyvsp[0].codigo; yyval.argumentos = yyvsp[0].argumentos;}
-#line 1697 "y.tab.c"
+#line 120 "mini_js.y"
+                                                                {yyval.valor = yyvsp[0].valor; yyval.args_value = yyvsp[0].args_value;}
+#line 1680 "y.tab.c"
     break;
 
   case 27: /* Declaracao_Complexa: ',' _ID '=' Conta Declaracao_Complexa  */
-#line 138 "miniJS.y"
-                                                                {yyval.codigo = declarar(yyvsp[-3].codigo) + yyvsp[-3].codigo + " " + yyvsp[-1].codigo + "= ^ "+ yyvsp[0].codigo;}
-#line 1703 "y.tab.c"
+#line 121 "mini_js.y"
+                                                                {yyval.valor = declarar(yyvsp[-3].valor) + yyvsp[-3].valor + " " + yyvsp[-1].valor + "= ^ "+ yyvsp[0].valor;}
+#line 1686 "y.tab.c"
     break;
 
   case 28: /* Declaracao_Complexa: %empty  */
-#line 139 "miniJS.y"
-                                                                {yyval.codigo = "";}
-#line 1709 "y.tab.c"
+#line 122 "mini_js.y"
+                                                                {yyval.valor = "";}
+#line 1692 "y.tab.c"
     break;
 
   case 29: /* Declaracao_Simples: ',' _ID Declaracao_Simples  */
-#line 142 "miniJS.y"
-                                                  {yyval.codigo = declarar(yyvsp[-1].codigo) + yyvsp[0].codigo; yyvsp[0].argumentos.push_back(yyvsp[-1].codigo); yyval.argumentos = yyvsp[0].argumentos;}
-#line 1715 "y.tab.c"
+#line 125 "mini_js.y"
+                                                  {yyval.valor = declarar(yyvsp[-1].valor) + yyvsp[0].valor; yyvsp[0].args_value.push_back(yyvsp[-1].valor); yyval.args_value = yyvsp[0].args_value;}
+#line 1698 "y.tab.c"
     break;
 
   case 30: /* Declaracao_Simples: %empty  */
-#line 143 "miniJS.y"
-                                                  {yyval.codigo = ""; }
-#line 1721 "y.tab.c"
+#line 126 "mini_js.y"
+                                                  {yyval.valor = ""; }
+#line 1704 "y.tab.c"
     break;
 
   case 31: /* Expressao_Declaracao: _ID '=' Conta Declaracao_Complexa  */
-#line 146 "miniJS.y"
-                                                              {yyval.codigo = declarar(yyvsp[-3].codigo) + yyvsp[-3].codigo + " " + yyvsp[-1].codigo + "= ^ " + yyvsp[0].codigo;}
-#line 1727 "y.tab.c"
+#line 129 "mini_js.y"
+                                                              {yyval.valor = declarar(yyvsp[-3].valor) + yyvsp[-3].valor + " " + yyvsp[-1].valor + "= ^ " + yyvsp[0].valor;}
+#line 1710 "y.tab.c"
     break;
 
   case 32: /* Expressao_Declaracao: _ID Declaracao_Complexa  */
-#line 147 "miniJS.y"
-                                                              {yyval.codigo = declarar(yyvsp[-1].codigo) + yyvsp[0].codigo; yyvsp[0].argumentos.push_back(yyvsp[-1].codigo); yyval.argumentos = yyvsp[0].argumentos;}
-#line 1733 "y.tab.c"
+#line 130 "mini_js.y"
+                                                              {yyval.valor = declarar(yyvsp[-1].valor) + yyvsp[0].valor; yyvsp[0].args_value.push_back(yyvsp[-1].valor); yyval.args_value = yyvsp[0].args_value;}
+#line 1716 "y.tab.c"
     break;
 
   case 33: /* $@1: %empty  */
-#line 150 "miniJS.y"
-                     {declaracao = yyvsp[0].codigo;}
-#line 1739 "y.tab.c"
+#line 133 "mini_js.y"
+                     {declaracao = yyvsp[0].valor;}
+#line 1722 "y.tab.c"
     break;
 
   case 34: /* Declaracao: _LET $@1 Expressao_Declaracao  */
-#line 150 "miniJS.y"
-                                                                       {yyval.codigo = yyvsp[0].codigo;}
-#line 1745 "y.tab.c"
+#line 133 "mini_js.y"
+                                                                      {yyval.valor = yyvsp[0].valor;}
+#line 1728 "y.tab.c"
     break;
 
   case 35: /* $@2: %empty  */
-#line 151 "miniJS.y"
-                     {declaracao = yyvsp[0].codigo;}
-#line 1751 "y.tab.c"
+#line 134 "mini_js.y"
+                     {declaracao = yyvsp[0].valor;}
+#line 1734 "y.tab.c"
     break;
 
   case 36: /* Declaracao: _CONST $@2 Expressao_Declaracao  */
-#line 151 "miniJS.y"
-                                                                       {yyval.codigo = yyvsp[0].codigo;}
-#line 1757 "y.tab.c"
+#line 134 "mini_js.y"
+                                                                      {yyval.valor = yyvsp[0].valor;}
+#line 1740 "y.tab.c"
     break;
 
   case 37: /* $@3: %empty  */
-#line 152 "miniJS.y"
-                     {declaracao = yyvsp[0].codigo;}
-#line 1763 "y.tab.c"
+#line 135 "mini_js.y"
+                     {declaracao = yyvsp[0].valor;}
+#line 1746 "y.tab.c"
     break;
 
   case 38: /* Declaracao: _VAR $@3 Expressao_Declaracao  */
-#line 152 "miniJS.y"
-                                                                       {yyval.codigo = yyvsp[0].codigo;}
-#line 1769 "y.tab.c"
+#line 135 "mini_js.y"
+                                                                      {yyval.valor = yyvsp[0].valor;}
+#line 1752 "y.tab.c"
     break;
 
   case 39: /* Declaracao: %empty  */
-#line 153 "miniJS.y"
-                                              {yyval.codigo = "";}
-#line 1775 "y.tab.c"
+#line 136 "mini_js.y"
+                                              {yyval.valor = "";}
+#line 1758 "y.tab.c"
     break;
 
   case 40: /* Membro_Simples: _STRING  */
-#line 156 "miniJS.y"
-                                   {yyval.codigo = yyvsp[0].codigo + " ";}
-#line 1781 "y.tab.c"
+#line 139 "mini_js.y"
+                                   {yyval.valor = yyvsp[0].valor + " ";}
+#line 1764 "y.tab.c"
     break;
 
   case 41: /* Membro_Simples: _INT  */
-#line 157 "miniJS.y"
-                                   {yyval.codigo = yyvsp[0].codigo + " ";}
-#line 1787 "y.tab.c"
+#line 140 "mini_js.y"
+                                   {yyval.valor = yyvsp[0].valor + " ";}
+#line 1770 "y.tab.c"
     break;
 
   case 42: /* Membro_Simples: _FLOAT  */
-#line 158 "miniJS.y"
-                                   {yyval.codigo = yyvsp[0].codigo + " ";}
-#line 1793 "y.tab.c"
+#line 141 "mini_js.y"
+                                   {yyval.valor = yyvsp[0].valor + " ";}
+#line 1776 "y.tab.c"
     break;
 
   case 43: /* Membro_Simples: _NOVO_OBJETO  */
-#line 159 "miniJS.y"
-                                   {yyval.codigo = "{} ";}
-#line 1799 "y.tab.c"
+#line 142 "mini_js.y"
+                                     {yyval.valor = "{} ";}
+#line 1782 "y.tab.c"
     break;
 
   case 44: /* Membro_Simples: _ARRAY  */
-#line 160 "miniJS.y"
-                                   {yyval.codigo = "[] ";}
-#line 1805 "y.tab.c"
+#line 143 "mini_js.y"
+                                   {yyval.valor = "[] ";}
+#line 1788 "y.tab.c"
     break;
 
   case 45: /* Dimensoes: '[' Conta ']' Dimensoes  */
-#line 163 "miniJS.y"
-                                            {yyval.adicionar_codigo("[@] " + yyvsp[-2].codigo + yyvsp[-2].obter_retorno() + yyvsp[0].codigo);}
-#line 1811 "y.tab.c"
+#line 146 "mini_js.y"
+                                            {yyval.valor ="[@] " + yyvsp[-2].valor + yyvsp[-2].getRetorno() + yyvsp[0].valor;}
+#line 1794 "y.tab.c"
     break;
 
   case 46: /* Dimensoes: %empty  */
-#line 164 "miniJS.y"
-                                            {yyval.codigo = "";}
-#line 1817 "y.tab.c"
+#line 147 "mini_js.y"
+                                            {yyval.valor = "";}
+#line 1800 "y.tab.c"
     break;
 
   case 47: /* Array: _ID '[' Conta ']'  */
-#line 168 "miniJS.y"
-                                                           {yyval.codigo = acessar_objeto(yyvsp[-3].codigo) + yyvsp[-1].codigo;}
-#line 1823 "y.tab.c"
+#line 151 "mini_js.y"
+                                                           {yyval.valor = acessar_objeto(yyvsp[-3].valor) + yyvsp[-1].valor;}
+#line 1806 "y.tab.c"
     break;
 
   case 48: /* Array: _ID '[' Conta ']' Dimensoes  */
-#line 169 "miniJS.y"
-                                                           {yyval.codigo = acessar_campo(yyvsp[-4].codigo, yyvsp[-2].codigo) + yyvsp[-2].obter_retorno() + yyvsp[0].codigo;}
-#line 1829 "y.tab.c"
+#line 152 "mini_js.y"
+                                                           {yyval.valor = acessar_campo(yyvsp[-4].valor, yyvsp[-2].valor) + yyvsp[-2].getRetorno() + yyvsp[0].valor;}
+#line 1812 "y.tab.c"
     break;
 
   case 49: /* Array: '(' _ID ')' '[' Conta ']' Dimensoes  */
-#line 170 "miniJS.y"
-                                                           {yyval.codigo = acessar_campo(yyvsp[-5].codigo, yyvsp[-2].codigo) + yyvsp[-2].obter_retorno() + yyvsp[0].codigo;}
-#line 1835 "y.tab.c"
+#line 153 "mini_js.y"
+                                                           {yyval.valor = acessar_campo(yyvsp[-5].valor, yyvsp[-2].valor) + yyvsp[-2].getRetorno() + yyvsp[0].valor;}
+#line 1818 "y.tab.c"
     break;
 
   case 50: /* Campo_Objeto: Array  */
-#line 173 "miniJS.y"
-                                                     {yyval.codigo = yyvsp[0].codigo;}
-#line 1841 "y.tab.c"
+#line 156 "mini_js.y"
+                                                     {yyval.valor = yyvsp[0].valor;}
+#line 1824 "y.tab.c"
     break;
 
   case 51: /* Campo_Objeto: _ID  */
-#line 174 "miniJS.y"
-                                                     {yyval.codigo = yyvsp[0].codigo + " ";}
-#line 1847 "y.tab.c"
+#line 157 "mini_js.y"
+                                                     {yyval.valor = yyvsp[0].valor + " ";}
+#line 1830 "y.tab.c"
     break;
 
   case 52: /* Continuacao_Objeto: Campo_Objeto Continuacao_Objeto  */
-#line 177 "miniJS.y"
-                                                                      {yyval.codigo = yyvsp[-1].codigo + yyvsp[0].codigo;}
-#line 1853 "y.tab.c"
+#line 160 "mini_js.y"
+                                                                      {yyval.valor = yyvsp[-1].valor + yyvsp[0].valor;}
+#line 1836 "y.tab.c"
     break;
 
   case 53: /* Continuacao_Objeto: Array  */
-#line 178 "miniJS.y"
-                                                                      {yyval.codigo = yyvsp[0].codigo;}
-#line 1859 "y.tab.c"
+#line 161 "mini_js.y"
+                                                                      {yyval.valor = yyvsp[0].valor;}
+#line 1842 "y.tab.c"
     break;
 
   case 54: /* Continuacao_Objeto: '.' Campo_Objeto Continuacao_Objeto  */
-#line 179 "miniJS.y"
-                                                                      {string space = " ";yyval.codigo = " [@]" + space + yyvsp[-1].codigo + yyvsp[0].codigo;}
-#line 1865 "y.tab.c"
+#line 162 "mini_js.y"
+                                                                      {string space = " ";yyval.valor = " [@]" + space + yyvsp[-1].valor + yyvsp[0].valor;}
+#line 1848 "y.tab.c"
     break;
 
   case 55: /* Continuacao_Objeto: %empty  */
-#line 180 "miniJS.y"
-                                                                      {yyval.codigo = "";}
-#line 1871 "y.tab.c"
+#line 163 "mini_js.y"
+                                                                      {yyval.valor = "";}
+#line 1854 "y.tab.c"
     break;
 
   case 56: /* Objeto: _ID '.' Continuacao_Objeto  */
-#line 183 "miniJS.y"
-                                                               {yyval.codigo = acessar_campo(yyvsp[-2].codigo, yyvsp[0].codigo);}
-#line 1877 "y.tab.c"
+#line 166 "mini_js.y"
+                                                               {yyval.valor = acessar_campo(yyvsp[-2].valor, yyvsp[0].valor);}
+#line 1860 "y.tab.c"
     break;
 
   case 57: /* Objeto: '(' _ID ')' '.' Continuacao_Objeto  */
-#line 184 "miniJS.y"
-                                                               {yyval.codigo = acessar_campo(yyvsp[-3].codigo, yyvsp[0].codigo);}
-#line 1883 "y.tab.c"
+#line 167 "mini_js.y"
+                                                               {yyval.valor = acessar_campo(yyvsp[-3].valor, yyvsp[0].valor);}
+#line 1866 "y.tab.c"
     break;
 
   case 58: /* Objeto: Array  */
-#line 185 "miniJS.y"
-                                                               {yyval.codigo = yyvsp[0].codigo;}
-#line 1889 "y.tab.c"
+#line 168 "mini_js.y"
+                                                               {yyval.valor = yyvsp[0].valor;}
+#line 1872 "y.tab.c"
     break;
 
   case 59: /* Objeto: '(' Objeto ')' Dimensoes  */
-#line 186 "miniJS.y"
-                                                               {yyval.codigo = yyvsp[-2].codigo + yyvsp[0].codigo;}
-#line 1895 "y.tab.c"
+#line 169 "mini_js.y"
+                                                               {yyval.valor = yyvsp[-2].valor + yyvsp[0].valor;}
+#line 1878 "y.tab.c"
     break;
 
   case 60: /* Casos_ID: _ID _CONCAT Atribuicao_MIGUAL  */
-#line 189 "miniJS.y"
-                                                           {yyval.codigo = yyvsp[-2].codigo + acessar_variavel(yyvsp[-2].codigo) + yyvsp[0].codigo;}
-#line 1901 "y.tab.c"
+#line 172 "mini_js.y"
+                                                           {yyval.valor = yyvsp[-2].valor + acessar_variavel(yyvsp[-2].valor) + yyvsp[0].valor;}
+#line 1884 "y.tab.c"
     break;
 
   case 61: /* Casos_ID: _ID _MAISMAIS Conta_Simples  */
-#line 190 "miniJS.y"
-                                                         {yyval.codigo = yyvsp[-2].codigo + " @" + yyvsp[0].codigo + " " + yyvsp[-2].codigo + " " + acessar_variavel(yyvsp[-2].codigo) + "1 + = ^ ";}
-#line 1907 "y.tab.c"
+#line 173 "mini_js.y"
+                                                         {yyval.valor = yyvsp[-2].valor + " @" + yyvsp[0].valor + " " + yyvsp[-2].valor + " " + acessar_variavel(yyvsp[-2].valor) + "1 + = ^ ";}
+#line 1890 "y.tab.c"
     break;
 
   case 62: /* Casos_ID: _ID Funcao  */
-#line 191 "miniJS.y"
-                                                         {yyval.codigo = yyvsp[0].codigo + acessar_variavel(yyvsp[-1].codigo) + "$ ";}
-#line 1913 "y.tab.c"
+#line 174 "mini_js.y"
+                                                         {yyval.valor = yyvsp[0].valor + acessar_variavel(yyvsp[-1].valor) + "$ ";}
+#line 1896 "y.tab.c"
     break;
 
   case 63: /* Casos_ID: '(' _ID ')' Funcao  */
-#line 192 "miniJS.y"
-                                                         {yyval.codigo = yyvsp[0].codigo + acessar_variavel(yyvsp[-2].codigo) + "$ ";}
-#line 1919 "y.tab.c"
+#line 175 "mini_js.y"
+                                                         {yyval.valor = yyvsp[0].valor + acessar_variavel(yyvsp[-2].valor) + "$ ";}
+#line 1902 "y.tab.c"
     break;
 
   case 64: /* Casos_ID: _ID Atribuicao_ID  */
-#line 193 "miniJS.y"
-                                                         {check_var(yyvsp[-1].codigo);yyval.codigo = yyvsp[-1].codigo + yyvsp[0].codigo; yyval.retorno = yyvsp[0].codigo == " @ "? "" : acessar_variavel(yyvsp[-1].codigo);}
-#line 1925 "y.tab.c"
+#line 176 "mini_js.y"
+                                                         {checkVar(yyvsp[-1].valor);yyval.valor = yyvsp[-1].valor + yyvsp[0].valor; yyval.retorno = yyvsp[0].valor == " @ "? "" : acessar_variavel(yyvsp[-1].valor);}
+#line 1908 "y.tab.c"
     break;
 
   case 65: /* Casos_Objeto: Objeto Atribuicao_Objeto  */
-#line 196 "miniJS.y"
-                                                                    {yyval.codigo = yyvsp[-1].codigo + yyvsp[0].codigo;}
-#line 1931 "y.tab.c"
+#line 179 "mini_js.y"
+                                                                    {yyval.valor = yyvsp[-1].valor + yyvsp[0].valor;}
+#line 1914 "y.tab.c"
     break;
 
   case 66: /* Casos_Objeto: Objeto _CONCAT AtribuicaoObj_MIGUAL  */
-#line 197 "miniJS.y"
-                                                                      {yyval.codigo = yyvsp[-2].codigo + " " + acessar_objeto(yyvsp[-2].codigo) + yyvsp[0].codigo;}
-#line 1937 "y.tab.c"
+#line 180 "mini_js.y"
+                                                                      {yyval.valor = yyvsp[-2].valor + " " + acessar_objeto(yyvsp[-2].valor) + yyvsp[0].valor;}
+#line 1920 "y.tab.c"
     break;
 
   case 67: /* Casos_Objeto: Objeto _MAISMAIS  */
-#line 198 "miniJS.y"
-                                                                    {yyval.codigo = yyvsp[-1].codigo + acessar_variavel(yyvsp[-1].codigo) + "1 + [=] ^ " + acessar_variavel(yyvsp[-1].codigo);}
-#line 1943 "y.tab.c"
+#line 181 "mini_js.y"
+                                                                    {yyval.valor = yyvsp[-1].valor + acessar_variavel(yyvsp[-1].valor) + "1 + [=] ^ " + acessar_variavel(yyvsp[-1].valor);}
+#line 1926 "y.tab.c"
     break;
 
   case 68: /* Casos_Objeto: Objeto Funcao  */
-#line 199 "miniJS.y"
-                                                                    {yyval.codigo = yyvsp[0].codigo + yyvsp[-1].codigo + "[@] $ ";}
-#line 1949 "y.tab.c"
+#line 182 "mini_js.y"
+                                                                    {yyval.valor = yyvsp[0].valor + yyvsp[-1].valor + "[@] $ ";}
+#line 1932 "y.tab.c"
     break;
 
   case 69: /* Membro: Membro_Simples  */
-#line 202 "miniJS.y"
-                                                  {yyval.codigo = yyvsp[0].codigo;}
-#line 1955 "y.tab.c"
+#line 185 "mini_js.y"
+                                                  {yyval.valor = yyvsp[0].valor;}
+#line 1938 "y.tab.c"
     break;
 
   case 70: /* Membro: Casos_Objeto  */
-#line 203 "miniJS.y"
-                                                  {yyval.codigo = yyvsp[0].codigo;}
-#line 1961 "y.tab.c"
+#line 186 "mini_js.y"
+                                                  {yyval.valor = yyvsp[0].valor;}
+#line 1944 "y.tab.c"
     break;
 
   case 71: /* Membro: Casos_ID  */
-#line 204 "miniJS.y"
-                                                  {yyval.codigo = yyvsp[0].codigo; yyval.retorno=yyvsp[0].retorno;}
-#line 1967 "y.tab.c"
+#line 187 "mini_js.y"
+                                                  {yyval.valor = yyvsp[0].valor; yyval.retorno=yyvsp[0].retorno;}
+#line 1950 "y.tab.c"
     break;
 
   case 72: /* Membro: Funcao  */
-#line 205 "miniJS.y"
-                                                  {yyval.codigo = yyvsp[0].codigo;}
-#line 1973 "y.tab.c"
+#line 188 "mini_js.y"
+                                                  {yyval.valor = yyvsp[0].valor;}
+#line 1956 "y.tab.c"
     break;
 
   case 73: /* Membro: '+' Conta  */
-#line 206 "miniJS.y"
-                                                  {yyval.codigo = yyvsp[0].codigo;}
-#line 1979 "y.tab.c"
+#line 189 "mini_js.y"
+                                                  {yyval.valor = yyvsp[0].valor;}
+#line 1962 "y.tab.c"
     break;
 
   case 74: /* Membro: '-' Termo  */
-#line 207 "miniJS.y"
-                                                  {yyval.codigo = "0 " + yyvsp[0].codigo + "- ";}
-#line 1985 "y.tab.c"
+#line 190 "mini_js.y"
+                                                  {yyval.valor = "0 " + yyvsp[0].valor + "- ";}
+#line 1968 "y.tab.c"
     break;
 
   case 75: /* Membro: '(' Conta ')' Membro  */
-#line 208 "miniJS.y"
-                                                  {yyval.codigo = yyvsp[-2].codigo;}
-#line 1991 "y.tab.c"
+#line 191 "mini_js.y"
+                                                  {yyval.valor = yyvsp[-2].valor;}
+#line 1974 "y.tab.c"
     break;
 
   case 76: /* Membro: _BOLEANO  */
-#line 209 "miniJS.y"
-                                                  {yyval.codigo = yyvsp[0].codigo + " ";}
-#line 1997 "y.tab.c"
+#line 192 "mini_js.y"
+                                                  {yyval.valor = yyvsp[0].valor + " ";}
+#line 1980 "y.tab.c"
     break;
 
   case 77: /* Termo: Membro Conta_Complexa  */
-#line 212 "miniJS.y"
-                                  {yyval.codigo = yyvsp[-1].codigo + yyvsp[0].codigo;yyval.retorno=yyvsp[-1].retorno;}
-#line 2003 "y.tab.c"
+#line 195 "mini_js.y"
+                                  {yyval.valor = yyvsp[-1].valor + yyvsp[0].valor;yyval.retorno=yyvsp[-1].retorno;}
+#line 1986 "y.tab.c"
     break;
 
   case 78: /* Conta: Termo Conta_Simples  */
-#line 215 "miniJS.y"
-                                  {yyval.codigo = yyvsp[-1].codigo + yyvsp[0].codigo;yyval.retorno=yyvsp[-1].retorno;}
-#line 2009 "y.tab.c"
+#line 198 "mini_js.y"
+                                  {yyval.valor = yyvsp[-1].valor + yyvsp[0].valor;yyval.retorno=yyvsp[-1].retorno;}
+#line 1992 "y.tab.c"
     break;
 
   case 79: /* Argumentos: Conta Argumentos  */
-#line 218 "miniJS.y"
-                                  {yyval.codigo = yyvsp[-1].codigo + yyvsp[-1].obter_retorno() + yyvsp[0].codigo; yyval.parametros = 1 + yyvsp[0].parametros;}
-#line 2015 "y.tab.c"
+#line 201 "mini_js.y"
+                                  {yyval.valor = yyvsp[-1].valor + yyvsp[-1].getRetorno() + yyvsp[0].valor; yyval.parametros = 1 + yyvsp[0].parametros;}
+#line 1998 "y.tab.c"
     break;
 
   case 80: /* Argumentos: ',' Argumentos  */
-#line 219 "miniJS.y"
-                                  {yyval.codigo = yyvsp[0].codigo; yyval.parametros = yyvsp[0].parametros;}
-#line 2021 "y.tab.c"
+#line 202 "mini_js.y"
+                                  {yyval.valor = yyvsp[0].valor; yyval.parametros = yyvsp[0].parametros;}
+#line 2004 "y.tab.c"
     break;
 
   case 81: /* Argumentos: %empty  */
-#line 220 "miniJS.y"
-                                  {yyval.codigo = ""; yyval.parametros = 0;}
-#line 2027 "y.tab.c"
+#line 203 "mini_js.y"
+                                  {yyval.valor = ""; yyval.parametros = 0;}
+#line 2010 "y.tab.c"
     break;
 
   case 82: /* Parametros: Expressao_Declaracao  */
-#line 223 "miniJS.y"
-                                  {yyval.codigo = declarar_arg(yyvsp[0].argumentos);}
-#line 2033 "y.tab.c"
+#line 206 "mini_js.y"
+                                  {yyval.valor = declarar_arg(yyvsp[0].args_value);}
+#line 2016 "y.tab.c"
     break;
 
   case 83: /* Parametros: %empty  */
-#line 224 "miniJS.y"
-                                  {yyval.codigo = "";}
-#line 2039 "y.tab.c"
+#line 207 "mini_js.y"
+                                  {yyval.valor = "";}
+#line 2022 "y.tab.c"
     break;
 
   case 84: /* Bloco_Funcao: '{' Continuacao Retorno '}'  */
-#line 227 "miniJS.y"
-                                           {yyval.codigo = yyvsp[-2].codigo + yyvsp[-1].codigo;}
-#line 2045 "y.tab.c"
+#line 210 "mini_js.y"
+                                           {yyval.valor = yyvsp[-2].valor + yyvsp[-1].valor;}
+#line 2028 "y.tab.c"
     break;
 
   case 85: /* Retorno: _RETURN Conta  */
-#line 230 "miniJS.y"
-                        {yyval.codigo = yyvsp[0].codigo + acessar_variavel("'&retorno'") + "~ " + retorno_padrao;}
-#line 2051 "y.tab.c"
+#line 213 "mini_js.y"
+                        {yyval.valor = yyvsp[0].valor + acessar_variavel("'&retorno'") + "~ " + retorno_padrao;}
+#line 2034 "y.tab.c"
     break;
 
   case 86: /* Retorno: %empty  */
-#line 231 "miniJS.y"
-                        {yyval.codigo = retorno_padrao;}
-#line 2057 "y.tab.c"
+#line 214 "mini_js.y"
+                        {yyval.valor = retorno_padrao;}
+#line 2040 "y.tab.c"
     break;
 
   case 87: /* $@4: %empty  */
-#line 234 "miniJS.y"
-                        {funcao = yyvsp[0].codigo; escopo_local = true;}
-#line 2063 "y.tab.c"
+#line 217 "mini_js.y"
+                        {funcao = yyvsp[0].valor; escopo_local = true;}
+#line 2046 "y.tab.c"
     break;
 
   case 88: /* Funcao: _FUNCTION _ID $@4 '(' Parametros ')' Bloco_Funcao  */
-#line 234 "miniJS.y"
-                                                                                                   {yyval.codigo = declara_funcao(yyvsp[-5].codigo, yyvsp[-2].codigo, yyvsp[0].codigo);}
-#line 2069 "y.tab.c"
+#line 217 "mini_js.y"
+                                                                                                  {yyval.valor = declara_funcao(yyvsp[-5].valor, yyvsp[-2].valor, yyvsp[0].valor);}
+#line 2052 "y.tab.c"
     break;
 
   case 89: /* Funcao: '(' Argumentos ')'  */
-#line 235 "miniJS.y"
-                                                  {yyval.codigo = yyvsp[-1].codigo + to_string(yyvsp[-1].parametros) + " ";}
-#line 2075 "y.tab.c"
+#line 218 "mini_js.y"
+                                                  {yyval.valor = yyvsp[-1].valor + to_string(yyvsp[-1].parametros) + " ";}
+#line 2058 "y.tab.c"
     break;
 
   case 90: /* Jump_IF: Expressao ';' SENAO  */
-#line 238 "miniJS.y"
-                                           {contador++;yyval.codigo = yyvsp[0].codigo + jumpComandos("end_if", "then_") + yyvsp[-2].codigo + enderecoResolvido("end_if") + " ";}
-#line 2081 "y.tab.c"
+#line 221 "mini_js.y"
+                                           {contador++;yyval.valor = yyvsp[0].valor + jumpComandos("end_if", "then_") + yyvsp[-2].valor + enderecoResolvido("end_if") + " ";}
+#line 2064 "y.tab.c"
     break;
 
   case 91: /* Jump_IF: Bloco SENAO  */
-#line 239 "miniJS.y"
-                                           {contador++;yyval.codigo = yyvsp[0].codigo + jumpComandos("end_if", "then_") + yyvsp[-1].codigo + enderecoResolvido("end_if") + " ";}
-#line 2087 "y.tab.c"
+#line 222 "mini_js.y"
+                                           {contador++;yyval.valor = yyvsp[0].valor + jumpComandos("end_if", "then_") + yyvsp[-1].valor + enderecoResolvido("end_if") + " ";}
+#line 2070 "y.tab.c"
     break;
 
   case 92: /* Jump_While: Expressao ';'  */
-#line 242 "miniJS.y"
-                                           {contador++;yyval.codigo = jumpComandos("end_while", "whilec_") + yyvsp[-1].codigo + " " + jumpComandos("while_", "end_while");}
-#line 2093 "y.tab.c"
+#line 225 "mini_js.y"
+                                           {contador++;yyval.valor = jumpComandos("end_while", "whilec_") + yyvsp[-1].valor + " " + jumpComandos("while_", "end_while");}
+#line 2076 "y.tab.c"
     break;
 
   case 93: /* Jump_While: Bloco  */
-#line 243 "miniJS.y"
-                                           {contador++;yyval.codigo = jumpComandos("end_while", "whilec_") + yyvsp[0].codigo + " " + jumpComandos("while_", "end_while");}
-#line 2099 "y.tab.c"
+#line 226 "mini_js.y"
+                                           {contador++;yyval.valor = jumpComandos("end_while", "whilec_") + yyvsp[0].valor + " " + jumpComandos("while_", "end_while");}
+#line 2082 "y.tab.c"
     break;
 
   case 94: /* Jump_For: Expressao ';'  */
-#line 246 "miniJS.y"
-                                           {contador++;yyval.codigo = jumpComandos("end_for", "forc_") + yyvsp[-1].codigo;}
-#line 2105 "y.tab.c"
+#line 229 "mini_js.y"
+                                           {contador++;yyval.valor = jumpComandos("end_for", "forc_") + yyvsp[-1].valor;}
+#line 2088 "y.tab.c"
     break;
 
   case 95: /* Jump_For: Bloco  */
-#line 247 "miniJS.y"
-                                           {contador++;yyval.codigo = jumpComandos("end_for", "forc_") + yyvsp[0].codigo;}
-#line 2111 "y.tab.c"
+#line 230 "mini_js.y"
+                                           {contador++;yyval.valor = jumpComandos("end_for", "forc_") + yyvsp[0].valor;}
+#line 2094 "y.tab.c"
     break;
 
-  case 97: /* SENAO: _ELSE Continuacao  */
-#line 251 "miniJS.y"
-                              {yyval.codigo = yyvsp[0].codigo;}
-#line 2117 "y.tab.c"
+  case 96: /* SENAO: _ELSE Continuacao  */
+#line 233 "mini_js.y"
+                              {yyval.valor = yyvsp[0].valor;}
+#line 2100 "y.tab.c"
     break;
 
-  case 98: /* SENAO: %empty  */
-#line 252 "miniJS.y"
-                              {yyval.codigo = "";}
-#line 2123 "y.tab.c"
+  case 97: /* SENAO: %empty  */
+#line 234 "mini_js.y"
+                              {yyval.valor = "";}
+#line 2106 "y.tab.c"
     break;
 
-  case 99: /* Comando: _IF '(' Expressao ')' Jump_IF  */
-#line 255 "miniJS.y"
-                                                                         {yyval.codigo = yyvsp[-2].codigo + enderecoPraFrente("then_") + " ?" + yyvsp[0].codigo;}
-#line 2129 "y.tab.c"
+  case 98: /* Comando: _IF '(' Expressao ')' Jump_IF  */
+#line 237 "mini_js.y"
+                                                                         {yyval.valor = yyvsp[-2].valor + enderecoPraFrente("then_") + " ?" + yyvsp[0].valor;}
+#line 2112 "y.tab.c"
     break;
 
-  case 100: /* Comando: _FOR '(' Expressao ';' Expressao ';' Expressao ')' Jump_For  */
-#line 256 "miniJS.y"
-                                                                         {yyval.codigo = yyvsp[-6].codigo + " " + enderecoResolvido("for_") + " " + yyvsp[-4].codigo + " " + enderecoPraFrente("forc_") + " ?" + yyvsp[0].codigo + " " + yyvsp[-2].codigo + " " + enderecoPraFrente("for_") + " # " + enderecoResolvido("end_for");}
-#line 2135 "y.tab.c"
+  case 99: /* Comando: _FOR '(' Expressao ';' Expressao ';' Expressao ')' Jump_For  */
+#line 238 "mini_js.y"
+                                                                         {yyval.valor = yyvsp[-6].valor + " " + enderecoResolvido("for_") + " " + yyvsp[-4].valor + " " + enderecoPraFrente("forc_") + " ?" + yyvsp[0].valor + " " + yyvsp[-2].valor + " " + enderecoPraFrente("for_") + " # " + enderecoResolvido("end_for");}
+#line 2118 "y.tab.c"
     break;
 
-  case 101: /* Comando: _WHILE '(' Expressao ')' Jump_While  */
-#line 257 "miniJS.y"
-                                                                         {yyval.codigo = enderecoResolvido("while_") + " " + yyvsp[-2].codigo + " " + enderecoPraFrente("whilec_") + " ?" + yyvsp[0].codigo;}
-#line 2141 "y.tab.c"
+  case 100: /* Comando: _WHILE '(' Expressao ')' Jump_While  */
+#line 239 "mini_js.y"
+                                                                         {yyval.valor = enderecoResolvido("while_") + " " + yyvsp[-2].valor + " " + enderecoPraFrente("whilec_") + " ?" + yyvsp[0].valor;}
+#line 2124 "y.tab.c"
     break;
 
-  case 102: /* Retorno_Comandos: _RETURN Conta  */
-#line 260 "miniJS.y"
-                                 {yyval.codigo = yyvsp[0].codigo + acessar_variavel("'&retorno'") + "~ ";}
-#line 2147 "y.tab.c"
+  case 101: /* Retorno_Comandos: _RETURN Conta  */
+#line 242 "mini_js.y"
+                                 {yyval.valor = yyvsp[0].valor + acessar_variavel("'&retorno'") + "~ ";}
+#line 2130 "y.tab.c"
     break;
 
-  case 103: /* Retorno_Comandos: %empty  */
-#line 261 "miniJS.y"
-                                 {yyval.codigo = "";}
-#line 2153 "y.tab.c"
+  case 102: /* Retorno_Comandos: %empty  */
+#line 243 "mini_js.y"
+                                 {yyval.valor = "";}
+#line 2136 "y.tab.c"
     break;
 
-  case 104: /* $@5: %empty  */
-#line 264 "miniJS.y"
+  case 103: /* $@5: %empty  */
+#line 246 "mini_js.y"
             {escopo_local = true; funcao = "local" + to_string(locais++);}
-#line 2159 "y.tab.c"
+#line 2142 "y.tab.c"
     break;
 
-  case 105: /* Bloco: '{' $@5 Continuacao Retorno_Comandos '}'  */
-#line 264 "miniJS.y"
-                                                                                                           {escopo_local=false;yyval.codigo = "<{ " +  yyvsp[-2].codigo + yyvsp[-1].codigo + "}> ";}
-#line 2165 "y.tab.c"
+  case 104: /* Bloco: '{' $@5 Continuacao Retorno_Comandos '}'  */
+#line 246 "mini_js.y"
+                                                                                                            {escopo_local=false;yyval.valor = "<{ " +  yyvsp[-2].valor + yyvsp[-1].valor + "}> ";}
+#line 2148 "y.tab.c"
     break;
 
-  case 106: /* Bloco: Retorno_Comandos  */
-#line 265 "miniJS.y"
-                                            {yyval.codigo = yyvsp[0].codigo;}
-#line 2171 "y.tab.c"
+  case 105: /* Bloco: Retorno_Comandos  */
+#line 247 "mini_js.y"
+                                            {yyval.valor = yyvsp[0].valor;}
+#line 2154 "y.tab.c"
     break;
 
-  case 107: /* Expressao: Declaracao  */
-#line 268 "miniJS.y"
-                                                   {yyval.codigo = yyvsp[0].codigo;}
-#line 2177 "y.tab.c"
+  case 106: /* Expressao: Declaracao  */
+#line 250 "mini_js.y"
+                                                   {yyval.valor = yyvsp[0].valor;}
+#line 2160 "y.tab.c"
     break;
 
-  case 108: /* Expressao: _ID Funcao Expressao  */
-#line 269 "miniJS.y"
-                                                            {yyval.codigo = yyvsp[-1].codigo + acessar_variavel(yyvsp[-2].codigo) + "$ ^ " + yyvsp[0].codigo;}
-#line 2183 "y.tab.c"
+  case 107: /* Expressao: _ID Funcao Expressao  */
+#line 251 "mini_js.y"
+                                                            {yyval.valor = yyvsp[-1].valor + acessar_variavel(yyvsp[-2].valor) + "$ ^ " + yyvsp[0].valor;}
+#line 2166 "y.tab.c"
     break;
 
-  case 109: /* Expressao: '(' _ID ')' Funcao Expressao  */
-#line 270 "miniJS.y"
-                                                            {yyval.codigo = yyvsp[-1].codigo + acessar_variavel(yyvsp[-3].codigo) + "$ ^ " + yyvsp[0].codigo;}
-#line 2189 "y.tab.c"
+  case 108: /* Expressao: '(' _ID ')' Funcao Expressao  */
+#line 252 "mini_js.y"
+                                                            {yyval.valor = yyvsp[-1].valor + acessar_variavel(yyvsp[-3].valor) + "$ ^ " + yyvsp[0].valor;}
+#line 2172 "y.tab.c"
     break;
 
-  case 110: /* Expressao: Objeto Funcao Expressao  */
-#line 271 "miniJS.y"
-                                                            {yyval.codigo = yyvsp[-1].codigo + yyvsp[-2].codigo + "[@] $ ^ " + yyvsp[0].codigo;}
-#line 2195 "y.tab.c"
+  case 109: /* Expressao: Objeto Funcao Expressao  */
+#line 253 "mini_js.y"
+                                                            {yyval.valor = yyvsp[-1].valor + yyvsp[-2].valor + "[@] $ ^ " + yyvsp[0].valor;}
+#line 2178 "y.tab.c"
     break;
 
-  case 111: /* Expressao: Conta Expressao  */
-#line 272 "miniJS.y"
-                                                   {yyval.codigo = yyvsp[-1].codigo + yyvsp[0].codigo;}
-#line 2201 "y.tab.c"
+  case 110: /* Expressao: Conta Expressao  */
+#line 254 "mini_js.y"
+                                                   {yyval.valor = yyvsp[-1].valor + yyvsp[0].valor;}
+#line 2184 "y.tab.c"
     break;
 
-  case 112: /* Expressao: Bloco Expressao  */
-#line 273 "miniJS.y"
-                                                   {yyval.codigo = yyvsp[-1].codigo + yyvsp[0].codigo;}
-#line 2207 "y.tab.c"
+  case 111: /* Expressao: Bloco Expressao  */
+#line 255 "mini_js.y"
+                                                   {yyval.valor = yyvsp[-1].valor + yyvsp[0].valor;}
+#line 2190 "y.tab.c"
     break;
 
-  case 113: /* Expressao: _ASM  */
-#line 274 "miniJS.y"
-                                                   {yyval.codigo = asm_trim(yyvsp[0].codigo);}
-#line 2213 "y.tab.c"
+  case 112: /* Expressao: _ASM  */
+#line 256 "mini_js.y"
+                                                   {yyval.valor = asm_trim(yyvsp[0].valor);}
+#line 2196 "y.tab.c"
     break;
 
-  case 114: /* Continuacao: Expressao ';' Continuacao  */
-#line 277 "miniJS.y"
-                                                 {yyval.codigo = yyvsp[-2].codigo + yyvsp[0].codigo;}
-#line 2219 "y.tab.c"
+  case 113: /* Continuacao: Expressao ';' Continuacao  */
+#line 259 "mini_js.y"
+                                                 {yyval.valor = yyvsp[-2].valor + yyvsp[0].valor;}
+#line 2202 "y.tab.c"
     break;
 
-  case 115: /* Continuacao: Comando Continuacao  */
-#line 278 "miniJS.y"
-                                                 {yyval.codigo = yyvsp[-1].codigo + yyvsp[0].codigo;}
-#line 2225 "y.tab.c"
+  case 114: /* Continuacao: Comando Continuacao  */
+#line 260 "mini_js.y"
+                                                 {yyval.valor = yyvsp[-1].valor + yyvsp[0].valor;}
+#line 2208 "y.tab.c"
     break;
 
-  case 116: /* Continuacao: ';' Continuacao  */
-#line 279 "miniJS.y"
-                                                 {yyval.codigo = yyvsp[0].codigo;}
-#line 2231 "y.tab.c"
+  case 115: /* Continuacao: ';' Continuacao  */
+#line 261 "mini_js.y"
+                                                 {yyval.valor = yyvsp[0].valor;}
+#line 2214 "y.tab.c"
     break;
 
-  case 117: /* Continuacao: %empty  */
-#line 280 "miniJS.y"
-                                                 {yyval.codigo = "";}
-#line 2237 "y.tab.c"
+  case 116: /* Continuacao: %empty  */
+#line 262 "mini_js.y"
+                                                 {yyval.valor = "";}
+#line 2220 "y.tab.c"
     break;
 
-  case 118: /* S: Expressao ';' Continuacao  */
-#line 283 "miniJS.y"
-                                        {exibir_codigo_processado(yyvsp[-2].codigo + yyvsp[0].codigo + "." + funcoes);}
-#line 2243 "y.tab.c"
+  case 117: /* S: Expressao ';' Continuacao  */
+#line 265 "mini_js.y"
+                                        {exibir_codigo_processado(yyvsp[-2].valor + yyvsp[0].valor + "." + funcoes);}
+#line 2226 "y.tab.c"
     break;
 
-  case 119: /* S: Comando Continuacao  */
-#line 284 "miniJS.y"
-                                              {exibir_codigo_processado(yyvsp[-1].codigo + yyvsp[0].codigo + "." + funcoes);}
-#line 2249 "y.tab.c"
+  case 118: /* S: Comando Continuacao  */
+#line 266 "mini_js.y"
+                                        {exibir_codigo_processado(yyvsp[-1].valor + yyvsp[0].valor + "." + funcoes);}
+#line 2232 "y.tab.c"
     break;
 
 
-#line 2253 "y.tab.c"
+#line 2236 "y.tab.c"
 
       default: break;
     }
@@ -2442,116 +2425,111 @@ yyreturnlab:
   return yyresult;
 }
 
-#line 286 "miniJS.y"
+#line 268 "mini_js.y"
 
 
 #include "lex.yy.c"
 
-string declara_funcao(string nome, string parametros, string corpo){
-        contador++; 
-        escopo_local = false; 
-        funcao = "";
-        string label = enderecoPraFrente(nome);
-        funcoes = funcoes + " " + enderecoResolvido(nome) + " " + parametros + corpo;
-        set_var(nome);
-        return nome + " & " + nome + " {} = '&funcao' " + label + " [=] ^ ";
-
+string declara_funcao(string nome, string parametros, string corpo) {
+    contador++;
+    escopo_local = false;
+    funcao = "";
+    string label = enderecoPraFrente(nome);
+    funcoes = funcoes + " " + enderecoResolvido(nome) + " " + parametros + corpo;
+    setVar(nome);
+    return nome + " & " + nome + " {} = '&funcao' " + label + " [=] ^ ";
 }
 
-string asm_trim(string asm_command){
-        ReplaceStringInPlace(asm_command, "asm{", "");
-        ReplaceStringInPlace(asm_command, "}", "");
-        return asm_command + " ^ ";
+string asm_trim(string asm_command) {
+    ReplaceStringInPlace(asm_command, "asm{", "");
+    ReplaceStringInPlace(asm_command, "}", "");
+    return asm_command + " ^ ";
 }
 
-string acessar_objeto(string nome_var){
-        return nome_var + "[@]" + " ";
+string acessar_objeto(string nome_var) {
+    return nome_var + "[@]" + " ";
 }
 
-string acessar_variavel(string nome_var){
-        return nome_var + " @" + " ";
+string acessar_variavel(string nome_var) {
+    return nome_var + " @" + " ";
 }
 
-string acessar_campo(string nome_objeto, string campo){
-        campo = " " + campo;
-        return nome_objeto + " @" + campo;
+string acessar_campo(string nome_objeto, string campo) {
+    campo = " " + campo;
+    return nome_objeto + " @" + campo;
 }
 
+string declarar(string var) {
+    setVar(var);
+    if(declaracao == "var" && declaracaoAntecedente) {
+        declaracaoAntecedente = 0;
+        return "";
+    }
+    return var + " & ";
+}
 
-string declarar(string var){
-        set_var(var);
-        if(declaracao == "var" && declaracaoAntecedente){
-                declaracaoAntecedente = 0;
-                return "";
+string declarar_arg(vector<string> args) {
+    int count = args.size() - 1;
+    string result = "";
+    string space = "";
+
+    for(string var : args) {
+        result = var + " & " + var + " " + acessar_variavel("arguments") +  to_string(count) + " [@] = ^" + space + result; 
+        space = " ";
+        count--;
+    }
+
+    return result + " ";
+}
+
+string enderecoPraFrente(string nome) {
+    return ":" + nome + to_string(contador);
+}
+
+string enderecoResolvido(string nome) {
+    return ";" + nome + to_string(contador);
+}
+
+string jumpComandos(string label_endereco_final, string label_endereco_corpo) {
+    return enderecoPraFrente(label_endereco_final) + " # " + enderecoResolvido(label_endereco_corpo) + " ";
+}
+
+void setVar(string var) {
+    map<string,int>::iterator it;
+
+    int linhaAtual = linha + 1;
+    if(escopo_local) {
+        map<string, int> vars = variaveis_locais[funcao];
+        
+        for (it = vars.begin(); it != vars.end(); ++it) {
+            if(var == it->first && declaracao != "var") exibir_erro("a variável '" + var + "' já foi declarada na linha " + to_string(it->second) +".");
         }
-        return var + " & ";
-}
-
-string declarar_arg(vector<string> args){
-        int count = args.size() - 1;
-        string result = "";
-        string space = "";
-
-        for(string var : args){
-                result = var + " & " + var + " " + acessar_variavel("arguments") +  to_string(count) + " [@] = ^" + space + result; 
-                space = " ";
-                count--;
+        variaveis_locais[funcao][var] = linhaAtual;
+    } else {
+        for (it = variaveis_globais.begin(); it != variaveis_globais.end(); ++it) {
+            if(var == it->first & !escopo_local && declaracao != "var") exibir_erro("a variável '" + var + "' já foi declarada na linha " + to_string(it->second) + ".");
+            if(var == it->first & !escopo_local && declaracao == "var") declaracaoAntecedente = 1;
         }
-
-        return result + " ";
+        variaveis_globais[var] = linhaAtual;
+    }        
 }
 
-
-string enderecoPraFrente(string nome){
-        return ":" + nome + to_string(contador);
+void checkVar(string var) {
+    map<string,int>::iterator it;
+    if(escopo_local) {
+        map<string, int> vars = variaveis_locais[funcao];
+        for (it = vars.begin(); it != vars.end(); ++it) {
+            if(var == it->first) return;
+        }   
+    } else {
+        for (it = variaveis_globais.begin(); it != variaveis_globais.end(); ++it) {
+            if(var == it->first) return;
+        }
+        exibir_erro("a variável '" + var + "' não foi declarada.");
+    }  
 }
 
-string enderecoResolvido(string nome){
-        return ";" + nome + to_string(contador);
-}
-
-string jumpComandos(string label_endereco_final, string label_endereco_corpo){
-        return enderecoPraFrente(label_endereco_final) + " # " + enderecoResolvido(label_endereco_corpo) + " ";
-}
-
-void set_var(string var){
-        map<string,int>::iterator it;
-
-        int linhaAtual = linha + 1;
-        if(escopo_local){
-                map<string, int> vars = variaveis_locais[funcao];
-                
-                for (it = vars.begin(); it != vars.end(); ++it){
-                        if(var == it->first && declaracao != "var") exibir_erro("a variável '" + var + "' já foi declarada na linha " + to_string(it->second) +".");
-                }
-                variaveis_locais[funcao][var] = linhaAtual;
-        }else{
-                for (it = variaveis_globais.begin(); it != variaveis_globais.end(); ++it){
-                        if(var == it->first & !escopo_local && declaracao != "var") exibir_erro("a variável '" + var + "' já foi declarada na linha " + to_string(it->second) + ".");
-                        if(var == it->first & !escopo_local && declaracao == "var") declaracaoAntecedente = 1;
-                }
-                variaveis_globais[var] = linhaAtual;
-        }        
-
-}
-
-void check_var(string var){
-        map<string,int>::iterator it;
-        if(escopo_local){
-                map<string, int> vars = variaveis_locais[funcao];
-                for (it = vars.begin(); it != vars.end(); ++it){
-                        if(var == it->first) return;
-                } 
-        }else{
-                for (it = variaveis_globais.begin(); it != variaveis_globais.end(); ++it){
-                        if(var == it->first) return;
-                }
-                exibir_erro("a variável '" + var + "' não foi declarada.");
-        }  
-}
-
-void ReplaceStringInPlace(std::string& subject, const std::string& search,
-                          const std::string& replace) {
+void ReplaceStringInPlace(std::string& subject, const std::string& search, const std::string& replace) {
     size_t pos = 0;
     while ((pos = subject.find(search, pos)) != std::string::npos) {
          subject.replace(pos, search.length(), replace);
@@ -2559,89 +2537,76 @@ void ReplaceStringInPlace(std::string& subject, const std::string& search,
     }
 }
 
-string printToken(int numToken, string tk){
-        return "";
+string printToken(int numToken, string tk) {
+    return "";
 }
 
-void exibir_codigo_processado(string codigo){
-        
-   int pc_nolabel = 0;
-   bool palavra = false;
-   bool palavra2 = false;
-   bool palavra3 = false;
-   bool label = false;
-   map<string,int> instPC;
-   string label_in_process = "";
-   string tk = "";
+void exibir_codigo_processado(string valor) {
+    int pc_nolabel = 0;
+    bool palavra = false;
+    bool label = false;
+    map<string,int> instPC;
+    string label_in_process = "";
+    string tk = "";
 
-   for(int pc = 0; pc != codigo.size() ; pc++) {
-     
-        if(codigo[pc] == ';'){
-                label = true;
-                tk += codigo[pc];
-                continue;
+    for(int pc = 0; pc != valor.size(); pc++) {
+        if(valor[pc] == ';') {
+            label = true;
+            tk += valor[pc];
+            continue;
         }
 
-        if(codigo[pc] == '"' || codigo[pc] == '\''){
-                palavra = !palavra;
+        if(valor[pc] == '"' || valor[pc] == '\'') {
+            palavra = !palavra;
         }
 
-        if(label){
-                if(codigo[pc] == ' '){
-                        label = false;
-                        instPC[label_in_process] = pc_nolabel;
-                        
-                        label_in_process = "";
-                        tk = printToken(pc_nolabel, tk);
-                        pc_nolabel++;
-                }else{
-                        label_in_process += codigo[pc];
-                        tk += codigo[pc];
-                }
-
-                continue;       
-        }
-        
-        if(codigo[pc] == ' ' && !palavra && tk != "println" && tk != "println #") {
+        if(label) {
+            if(valor[pc] == ' ') {
+                label = false;
+                instPC[label_in_process] = pc_nolabel;
+                label_in_process = "";
                 tk = printToken(pc_nolabel, tk);
                 pc_nolabel++;
-                continue;
+            } else {
+                label_in_process += valor[pc];
+                tk += valor[pc];
+            }
+            continue;       
         }
-
-        tk += codigo[pc];
-
-   }
-
-   map<string,int>::iterator it;
-   for(it=instPC.begin(); it!=instPC.end(); ++it){
-      ReplaceStringInPlace(codigo, ":" + it->first, to_string(it->second)); 
-      ReplaceStringInPlace(codigo, ";" + it->first + " ", ""); 
-   }
         
-   cout << codigo;
+        if(valor[pc] == ' ' && !palavra && tk != "println" && tk != "println #") {
+            tk = printToken(pc_nolabel, tk);
+            pc_nolabel++;
+            continue;
+        }
+        tk += valor[pc];
+    }
 
+    for(auto it=instPC.begin(); it!=instPC.end(); ++it) {
+        ReplaceStringInPlace(valor, ":" + it->first, to_string(it->second)); 
+        ReplaceStringInPlace(valor, ";" + it->first + " ", ""); 
+    }
+    
+    cout << valor;
 }
 
-void exibir_erro( string msg ) {
-  cout << "Erro: " << msg;
-  exit(0); 
+void exibir_erro(string msg) {
+    cerr << "Erro: " << msg << endl;
+    exit(1); 
 }
 
-
-int token( int tk ) {  
-  yylval.codigo = yytext; 
-
-  return tk;
+int token(int tk) {  
+    yylval.valor = yytext; 
+    return tk;
 }
 
-void yyerror( const char* st ) {
-   puts( st ); 
-   printf( "Proximo a: %s\nCoord: %d-%d\n", yytext, linha, coluna);
-   exit( 0 );
+void yyerror(const char* st) {
+    puts(st); 
+    printf("Proximo a: %s\nCoord: %d-%d\n", yytext, linha, coluna);
+    exit(0);
 }
 
-int main( int argc, char* argv[] ) {
-  yyparse();
-  
-  return 0;
+int main(int argc, char* argv[]) {
+    yyparse();
+    return 0;
 }

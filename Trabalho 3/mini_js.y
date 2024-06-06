@@ -383,66 +383,57 @@ string printToken(int numToken, string tk){
 }
 
 void exibir_codigo_processado(string valor){
-   int pc_nolabel = 0;
-   bool palavra = false;
-   bool palavra2 = false;
-   bool palavra3 = false;
-   bool label = false;
-   map<string,int> instPC;
-   string label_in_process = "";
-   string tk = "";
+    int pc_nolabel = 0;
+    bool palavra = false;
+    bool label = false;
+    map<string,int> instPC;
+    string label_in_process = "";
+    string tk = "";
 
-   for(int pc = 0; pc != valor.size() ; pc++) {
-     
+    for(int pc = 0; pc != valor.size(); pc++) {
         if(valor[pc] == ';'){
-                label = true;
-                tk += valor[pc];
-                continue;
+            label = true;
+            tk += valor[pc];
+            continue;
         }
 
         if(valor[pc] == '"' || valor[pc] == '\''){
-                palavra = !palavra;
+            palavra = !palavra;
         }
 
         if(label){
-                if(valor[pc] == ' '){
-                        label = false;
-                        instPC[label_in_process] = pc_nolabel;
-                        
-                        label_in_process = "";
-                        tk = printToken(pc_nolabel, tk);
-                        pc_nolabel++;
-                }else{
-                        label_in_process += valor[pc];
-                        tk += valor[pc];
-                }
-
-                continue;       
+            if(valor[pc] == ' '){
+                label = false;
+                instPC[label_in_process] = pc_nolabel;
+                label_in_process = "";
+                tk = printToken(pc_nolabel, tk);
+                pc_nolabel++;
+            }else{
+                label_in_process += valor[pc];
+                tk += valor[pc];
+            }
+            continue;       
         }
         
         if(valor[pc] == ' ' && !palavra && tk != "println" && tk != "println #") {
-                tk = printToken(pc_nolabel, tk);
-                pc_nolabel++;
-                continue;
+            tk = printToken(pc_nolabel, tk);
+            pc_nolabel++;
+            continue;
         }
-
         tk += valor[pc];
+    }
 
-   }
-
-   map<string,int>::iterator it;
-   for(it=instPC.begin(); it!=instPC.end(); ++it){
-      ReplaceStringInPlace(valor, ":" + it->first, to_string(it->second)); 
-      ReplaceStringInPlace(valor, ";" + it->first + " ", ""); 
-   }
-        
-   cout << valor;
-
+    for(auto it=instPC.begin(); it!=instPC.end(); ++it){
+        ReplaceStringInPlace(valor, ":" + it->first, to_string(it->second)); 
+        ReplaceStringInPlace(valor, ";" + it->first + " ", ""); 
+    }
+    
+    cout << valor;
 }
 
-void exibir_erro( string msg ) {
-  cout << "Erro: " << msg << endl;
-  exit(0); 
+void exibir_erro(string msg) {
+    cerr << "Erro: " << msg << endl;
+    exit(1); 
 }
 
 

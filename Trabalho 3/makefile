@@ -1,11 +1,21 @@
-all: miniJS.out
-	../Testes_Trabalhos/test.py -d testes -p ./miniJS.out
+all: saida codigo
+	echo "=== Execução ==="
+	./interpretador < codigo
+	
+codigo: saida testes/Teste4.txt
+	./saida < testes/Teste4.txt > codigo
+	echo "=== Codigo ==="
+	cat codigo
 
-lex.yy.c: miniJS.l
-	lex miniJS.l
+saida: lex.yy.c y.tab.c
+	g++ y.tab.c -o saida -lfl	
+	
+lex.yy.c: mini_js.l
+	lex mini_js.l
 
-y.tab.c: miniJS.y
-	yacc miniJS.y
-
-miniJS.out: lex.yy.c y.tab.c
-	g++ -o miniJS.out y.tab.c -lfl
+	
+y.tab.c: mini_js.y
+	yacc mini_js.y
+	
+clean: 
+	rm -f lex.yy.c y.tab.c saida

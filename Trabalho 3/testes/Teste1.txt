@@ -3,4 +3,3 @@ function log( msg ) {
 }
 
 let r = log( 'Hello, world!' );
-

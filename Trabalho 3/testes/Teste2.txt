@@ -1,9 +1,9 @@
 const a = 9;
-function log( msg ) {
+function log( msg ) { 
   msg asm{println # undefined};
-};
+}
 
-var c = [
+var c = [ 
 ];
 (log)( c );
 { let a = 3.1; }
@@ -11,4 +11,3 @@ var c = [
   let b = 7;
   c = b; }
 var c = c+ c++;
-

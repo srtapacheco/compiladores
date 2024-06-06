@@ -1,5 +1,5 @@
 function print(x) { x asm{println # undefined};
-}
+} 
 var a, b = [];
 const c = -1;
 print( c + c );
