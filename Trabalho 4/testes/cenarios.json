@@ -1,0 +1,20 @@
+{
+    "testes": [
+        {
+            "nome": "Test 3: #3 Variável duplicada",
+            "arquivo_input": "Teste3.txt",
+            "arquivo_output": "Teste3-out.txt"
+        },
+        {
+            "nome": "Test 4: #4 Escopo",
+            "arquivo_input": "Teste4.txt",
+            "arquivo_output": "Teste4-out.txt"
+        },
+        {
+            "nome": "Test 5: #5 Escopo",
+            "arquivo_input": "Teste5.txt",
+            "arquivo_output": "Teste5-out.txt"
+        }
+        
+    ]
+}

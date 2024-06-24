@@ -1,0 +1,11 @@
+=== Console ===
+{ m: 9; }
+=== Vars ===
+|{ a: undefined; b: [ 0: true; ]; c: -1; print: { &funcao: ##; }; undefined: undefined; }|
+|{ a: -1; }|
+|{ b: { m: 9; }; }|
+|{ &retorno: ##; arguments: [ 0: { m: 9; }; ]; x: { m: 9; }; }|
+=== Pilha ===
+|0|
+|undefined|
+

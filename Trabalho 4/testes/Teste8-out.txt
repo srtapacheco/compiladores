@@ -1,0 +1,1 @@
+Erro: a variável 'z' já foi declarada na linha 1.
