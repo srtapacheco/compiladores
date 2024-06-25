@@ -6,376 +6,347 @@ extern "C" int yylex();
 #include <string>
 #include <vector>
 #include <map>
-#include <stdio.h>
-#include <stdlib.h>
-#include <algorithm>
+#include <sstream>
 
 using namespace std;
 
-int yyparse();
-void yyerror(const char *);
-
-
-typedef vector<string> lista_strings;
+int token(int tk);
 
 struct Atributos {
-  lista_strings c; 
-  int l; 
+    vector<string> c;
 };
-
 
 #define YYSTYPE Atributos
 
-lista_strings concatena(lista_strings a, lista_strings b);
-lista_strings operator+(lista_strings a, lista_strings b);
-lista_strings operator+(lista_strings a, string b);
-lista_strings operator+(string a, lista_strings b);
+int yyparse();
+void yyerror(const char*);
 
-string gera_label(string prefixo);
+vector<string> operator+(const vector<string>& a, const vector<string>& b);
+vector<string> operator+(const vector<string>& a, const string& b);
 
-void print(lista_strings source);
-lista_strings resolve_enderecos(lista_strings entrada);
+string gera_label(const string& prefixo);
 
-lista_strings novo;
-int linha = 1, coluna = 1;
-int token(int tk);
+vector<string> resolve_enderecos(const vector<string>& entrada);
+void imprime_vetor(const vector<string>& v);
+string remove_espacos(const char* c);
+vector<string> divide_string(const string& str);
 
-void generate_var(Atributos var);
-void check_var(Atributos var);
+vector<string> auxiliar;
 map<string, int> vars;
+vector<string> funcs;
+int linha = 1, quantidade_parametros = 0;
 
-bool is_function_scope = false;
-int argCallCounter = 0;
-int argCounter = 0;
-lista_strings argList = {};
-lista_strings funcSource = {};
-
-string trim(string str, string charsToRemove);
-lista_strings token(string asmLine);
-
-int literalArrayCounter = 0;
-
+vector<vector<string>> elements;
+vector<vector<string>> pars;
 %}
 
-%token _IF _ELSE _ASM _BOLEANO
-%token _NUM _ID _LET _WHILE _FOR TK_STR _ARRAY
-%token _MA_IG _FUNCTION _RETURN _SETA_ESQUERDA
-%token _MAIS _MENOS _MULT _DIV _MODULO
-%token _MAIOR _MENOR _ME_IG _MA_IG _IGUAL _DIF _AND _OR
-%token _OBJETO _ABRE_CHAVE _FECHA_CHAVE
+%token _FLOAT _STRING
+%token _ID _IF _ELSE _FOR _WHILE 
+%token _IGUAL _MA_IG _ME_IG
+%token _BOLEANO _LET _VAR _CONST _FUNCTION FUNC_ANON _RETURN ASM APS _ARROW
 
-%nonassoc _MAIOR _MENOR _ME_IG _MA_IG _IGUAL _DIF
-%nonassoc _IF _ELSE _WHILE _FOR
-%left _AND _OR
-%left _MAIS _MENOS
-%left _MULT _DIV _MODULO
+%right '='
+%right _ARROW
 
-%start S 
+%nonassoc '<' '>' _IGUAL _MA_IG _ME_IG
+
+%left '+' '-'
+%left '*' '/' '%'
+
+%start S
 
 %%
 
-S : CMDs  { $$.c = $1.c + "." + funcSource; print( resolve_enderecos($$.c) ); }
+S : Comandos { imprime_vetor(resolve_enderecos($1.c + "." + funcs)); }
   ;
 
-CMDs : CMD ';' CMDs    { $$.c = $1.c + $3.c; }
-	 | FLOW_CMD CMDs   { $$.c = $1.c + $2.c; }
-	 | FUNC_DECL CMDs  { $$.c = $1.c + $2.c; }
-     |                 { $$.c = novo; }
+Comandos : Comando Comandos { $$.c = $1.c + $2.c; }
+     | Comando { $$.c = $1.c; }
      ;
-	 
-ARGS : R ',' ARGS { $$.c = $1.c + $3.c; argCounter++; is_function_scope = true;
-					if($1.c.size() >= 2) argList.push_back($1.c.rbegin()[1]); }
-					
-	 | R          { $$ = $1; argCounter++; is_function_scope = true;
-					if($1.c.size() >= 2) argList.push_back($1.c.rbegin()[1]); }
-					
-	 |            { $$.c = novo; is_function_scope = true; }
-	 ;
-	 
-ARGS_CALL : R ',' ARGS_CALL   { $$.c = $1.c + $3.c; argCallCounter++; }
-          | R                 { $$ = $1; argCallCounter++; }
-		  |                   { $$.c = novo; }
-		  ;
 
-CMD : A                        { $$.c = $1.c + "^"; }
-    | _LET DECLVARS          { $$ = $2; }
-	| _RETURN R              { $$.c = $2.c + "'&retorno'" + "@" + "~"; }
-	| E _ASM                 { $$.c = $1.c + $2.c + "^"; }
+Comando : Expressao ';' { $$.c = $1.c + "^"; }
+    | _ID ASM ';' { $$.c = $1.c + "@" + $2.c + "^"; }
+    | _LET Declaracao_Simples ';' { $$.c = $2.c; }
+    | _VAR Declaracao_Simples ';' { $$.c = $2.c; }
+    | _CONST Declaracao_Simples ';' { $$.c = $2.c; }
+    | _RETURN Expressao ';' { $$.c = auxiliar + $2.c + "'&retorno'" + "@" + "~"; }
+    | _IF '(' Expressao ')' Bloco _ELSE Bloco { 
+        string r = gera_label("IF_ELSE"); 
+        string s = gera_label("IF_CONTINUE"); 
+        $$.c = $3.c + "!" + r + "?" + $5.c + s + "#" + (":" + r) + $7.c + (":" + s); 
+    }
+    | _IF '(' Expressao ')' Bloco { 
+        string r = gera_label("ENDIF"); 
+        $$.c = $3.c + "!" + r + "?" + $5.c + (":" + r); 
+    }
+    | _WHILE '(' Expressao ')' Bloco { 
+        string r = gera_label("_WHILE"); 
+        string s = gera_label("ENDWHILE"); 
+        $$.c = auxiliar + (":" + r) + $3.c + "!" + s + "?" + $5.c + r + "#" + (":" + s); 
+    }
+    | _FOR '(' Comando Expressao ';' Expressao ')' Bloco { 
+        string r = gera_label("TESTFOR");
+        string s = gera_label("ENDFOR"); 
+        $$.c = $3.c + (":" + r) + $4.c + "!" + s + "?" + $8.c + $6.c + "^" + r + "#" + (":" + s); 
+    }
+    | _FUNCTION _ID '(' ')' Bloco { 
+        string r = gera_label($2.c[0]); 
+        vector<string> retorna = auxiliar + "undefined" + "@" + "'&retorno'" + "@" + "~"; 
+        funcs = funcs + (":" + r) + $5.c + retorna;
+        vector<string> end_decl = $2.c + "&" + $2.c + "{}" + "=" + "'&funcao'" + r + "[=]" + "^";
+        $$.c = end_decl; 
+        quantidade_parametros = 0; 
+    }
+    | _FUNCTION _ID '(' D_LINHA ')' Bloco { 
+        string r = gera_label($2.c[0]);
+        vector<string> retorna = auxiliar + "undefined" + "@" + "'&retorno'" + "@" + "~";
+        funcs = funcs + (":" + r) + $4.c + $6.c + retorna;
+        $$.c = $2.c + "&" + $2.c + "{}" + "=" + "'&funcao'" + r + "[=]" + "^"; 
+    }
     ;
-	
-FLOW_CMD : _IF '(' R ')' BODY OPT_ELSE
-			{
-				string endif = gera_label("end_if");
-				string dps_else = gera_label("dps_else");
-				$$.c = $3.c + "!" + endif + "?" + $5.c + dps_else + "#" + (":" + endif) + $6.c + (":" + dps_else) ;
-			}
-			
-		 | _WHILE '(' R ')' BODY
-			{
-				string endwhile = gera_label("end_while");
-				string beginwhile = gera_label("begin_while");
-				$$.c = (":" + beginwhile) + $3.c + "!" + endwhile + "?" + $5.c + beginwhile + "#" + (":" + endwhile);
-			}
-			
-		 | _FOR '(' CMD ';' R ';' A ')' BODY
-		  {
-		   string endfor = gera_label("end_for");
-		   string beginfor = gera_label("begin_for");
-		   $$.c = $3.c + (":" + beginfor) + $5.c + "!" + endfor + "?" + $9.c + $7.c + "^" + beginfor + "#" + (":" + endfor);
-		  }
-		 ;
-		   
-OPT_ELSE : _ELSE BODY  { $$ = $2; }
-		 |               { $$.c = novo; }
-		 ;
-	
-BODY : CMD ';'     { $$ = $1; }
-	 | BLOCK
-	 | FLOW_CMD
-	 ;
-	 
-FUNC_CALL : LVALUE '(' ARGS_CALL ')'
-			{
-				$$.c = $3.c + to_string(argCallCounter) + $1.c + "@" + "$";
-				argCallCounter = 0;
-			}
-		  | LVALUEPROP '(' ARGS_CALL ')'
-			{
-				$$.c = $3.c + to_string(argCallCounter) + $1.c + "[@]" + "$";
-				argCallCounter = 0;
-			}
-	      ;
-		  
-FUNC_DECL : _FUNCTION LVALUE '(' ARGS ')' BLOCK
-			{
-				string beginfunc = gera_label("begin_func");
-				$$.c = $2.c + "&" + $2.c + "{}" + "=" + "'&funcao'" + beginfunc + "[=]" + "^";
-				
-				funcSource.push_back(":"+beginfunc);
-				for(int i = 0; i < argCounter; i++){
-					lista_strings tmp = {argList.at(argCounter-i-1), "&", argList.at(argCounter-i-1), "arguments", "@", to_string(i), "[@]", "=", "^"};
-					funcSource.insert(funcSource.end(), tmp.begin(), tmp.end());
-				}
-				funcSource.insert(funcSource.end(), $6.c.begin(), $6.c.end());
-				
-				lista_strings finalReturn = {"undefined", "@", "'&retorno'", "@", "~"};
-				funcSource.insert(funcSource.end(), finalReturn.begin(), finalReturn.end());
-				
-				argCounter = 0; argList.clear(); is_function_scope = false;
-			}
-		  ;
-			
-BLOCK : _ABRE_CHAVE CMDs _FECHA_CHAVE { $$ = $2; }
-	  ;
 
-DECLVARS : DECLVAR ',' DECLVARS  { $$.c = $1.c + $3.c; }
-         | DECLVAR               { $$ = $1; }
-         ;
-
-DECLVAR : LVALUE '=' R  { generate_var($1); $$.c = $1.c + "&" + $1.c + $3.c + "=" + "^"; }
-        | LVALUE        { generate_var($1); $$.c = $1.c + "&"; }
-		
-		| LVALUE '=' LVALUE _MA_IG E
-			{
-				generate_var($1);
-				string beginfunc = gera_label("begin_func");
-				$$.c = $1.c + "&" + $1.c + "{}" + "'&funcao'" + beginfunc + "[<=]" + "=" + "^";
-						  
-				funcSource.push_back(":"+beginfunc);
-				lista_strings lambdaArgs = {$3.c.back(), "&", $3.c.back(), "arguments", "0", "[@]", "=", "^"};
-				funcSource.insert(funcSource.end(), lambdaArgs.begin(), lambdaArgs.end());
-				
-				funcSource.insert(funcSource.end(), $5.c.begin(), $5.c.end());
-				lista_strings finalReturn = {"'&retorno'", "@", "~"};
-				funcSource.insert(funcSource.end(), finalReturn.begin(), finalReturn.end());
-			}
-		
-		| LVALUE '=' _FUNCTION '(' ARGS ')' BLOCK
-			{
-				string beginfunc = gera_label("begin_func");
-				$$.c = $1.c + "&" + $1.c + "{}" + "'&funcao'" + beginfunc + "[<=]" + "=" + "^";
-				
-				funcSource.push_back(":"+beginfunc);
-				
-				for(int i = 0; i < argCounter; i++){
-					lista_strings tmp = {argList.at(argCounter-i-1), "&", argList.at(argCounter-i-1), "arguments", "@", to_string(i), "[@]", "=", "^"};
-					funcSource.insert(funcSource.end(), tmp.begin(), tmp.end());
-				}
-				
-				funcSource.insert(funcSource.end(), $7.c.begin(), $7.c.end());
-				
-				lista_strings finalReturn = {"undefined", "@", "'&retorno'", "@", "~"};
-				funcSource.insert(funcSource.end(), finalReturn.begin(), finalReturn.end());
-				
-				argCounter = 0; argList.clear(); is_function_scope = false;
-			}
-        ;
-
-A : LVALUE '=' A                   { if(!is_function_scope) check_var($1); $$.c = $1.c + $3.c + "="; }
-  | LVALUEPROP '=' A               { $$.c = $1.c + $3.c + "[=]"; }
-  | R                              { $$ = $1; }
+Expressao : Expressao '<' Expressao { $$.c = $1.c + $3.c + "<"; }
+  | Expressao '>' Expressao { $$.c = $1.c + $3.c + ">"; }
+  | Expressao _MA_IG Expressao { $$.c = $1.c + $3.c + ">="; }
+  | Expressao _ME_IG Expressao { $$.c = $1.c + $3.c + "<="; }
+  | Expressao _IGUAL Expressao { $$.c = $1.c + $3.c + "=="; }
+  | Expressao '*' Expressao { $$.c = $1.c + $3.c + "*"; }
+  | Expressao '+' Expressao { $$.c = $1.c + $3.c + "+"; }
+  | Expressao '-' Expressao { $$.c = $1.c + $3.c + "-"; }
+  | Expressao '/' Expressao { $$.c = $1.c + $3.c + "/"; }
+  | Expressao '%' Expressao { $$.c = $1.c + $3.c + "%"; }
+  | LV_ '=' Expressao { $$.c = $1.c + $3.c + "[=]"; }
+  | LVALUE '=' Expressao { $$.c = $1.c + $3.c + "="; }
+  | LV_ { $$.c = $1.c + "[@]"; }
+  | LVALUE { $$.c = $1.c + "@"; }
+  | O { $$ = $1; }
+  | F { $$ = $1; }
   ;
 
-R : E _ME_IG E        { $$.c = $1.c + $3.c + "<="; }
-  | E _MA_IG E        { $$.c = $1.c + $3.c + ">="; }
-  |	E _MENOR E       { $$.c = $1.c + $3.c + "<"; }
-  | E _MAIOR E       { $$.c = $1.c + $3.c + ">"; }
-  | E _IGUAL E       { $$.c = $1.c + $3.c + "=="; }
-  | E _DIF E        { $$.c = $1.c + $3.c + "!="; }
-  | E                  { $$ = $1; }
+Declaracao_Simples : Declaracao_Complexa ',' Declaracao_Simples { $$.c = $1.c + $3.c; }
+  | Declaracao_Complexa { $$.c = $1.c; }
   ;
 
-E : LVALUE '=' E       { $$.c = $1.c + $3.c + "=" ; }
-  | LVALUEPROP '=' E   { $$.c = $1.c + $3.c + "[=]"; }
-  | E _MAIS E        { $$.c = $1.c + $3.c + "+"; }
-  | E _MENOS E       { $$.c = $1.c + $3.c + "-"; }
-  | E _MULT E        { $$.c = $1.c + $3.c + "*"; }
-  | E _DIV E         { $$.c = $1.c + $3.c + "/"; }
-  | E _MODULO E      { $$.c = $1.c + $3.c + "%"; }
-  | _MENOS E         { $$.c = "0" + $2.c + "-"; }
-  | LVALUE             { $$.c = $1.c + "@"; }
-  | LVALUEPROP         { $$.c = $1.c + "[@]"; }
-  | F                  { $$ = $1; }
+Declaracao_Complexa : LVALUE '=' Expressao { 
+        $$.c = $1.c + "&" + $1.c + $3.c + "=" + "^";
+        vars[$1.c[0]] = linha;
+    }
+  | LVALUE { 
+        $$.c = $1.c + "&";
+        vars[$1.c[0]] = linha;
+    }
   ;
-  
-LVALUE : _ID
-	   ;
-	   
-LVALUEPROP : E '[' E ']'    { $$.c = $1.c + $3.c; }
-		   | E '.' LVALUE   { $$.c = $1.c + $3.c; }
-		   ;
 
-		   
-OBJ_MEMBERS : LVALUE ':' E ',' OBJ_MEMBERS   { $$.c = $1.c + $3.c + "[<=]" + $5.c; }
-			| LVALUE ':' E                   { $$.c = $1.c + $3.c + "[<=]"; }
-			|                                { $$.c = novo; }
-			;
-			
-ARRAY_MEMBERS : E ',' ARRAY_MEMBERS { $$.c = "TAG_NUM" + $1.c + "[<=]" + $3.c; }
-			  | E { $$.c = "TAG_NUM" + $1.c + "[<=]"; }
-			  ;
-		   
-F : _NUM                                   { $$.c = $1.c; }
-  | TK_STR                                   { $$.c = $1.c; }
-  | _BOLEANO                               { $$.c = $1.c; }
-  | '(' E ')'                                { $$ = $2; }
-  | _ARRAY                                 { $$.c = novo + $1.c; }
-  | '[' ARRAY_MEMBERS ']'                    {
-												for(int i = 0; i < $2.c.size(); i++){
-													if($2.c[i] == "TAG_NUM")
-														$2.c[i] = to_string(literalArrayCounter++);
-												}
-												$$.c = "[]" + $2.c;
-												literalArrayCounter = 0;
-											 }
-  | _ABRE_CHAVE OBJ_MEMBERS _FECHA_CHAVE   { $$.c = "{}" + $2.c; }
-  | _OBJETO                                { $$.c = novo + $1.c; }
-  | FUNC_CALL                                { $$ = $1; }
+Bloco : '{' Comandos '}' { $$.c = $2.c; }
+  | Comando { $$.c = $1.c; }
+  | B_ { $$.c = auxiliar; }
+  ;
+
+B_ : '{' '}' { $$.c = auxiliar; }
+   ;
+
+D_LINHA : D_LINHA_ { 
+        vector<string> decl_par;
+        int tam = pars.size() / 2;
+        for (int i = 0; i < tam; i++) {
+            vector<string> defaultValue = pars.back();
+            pars.pop_back();
+            vector<string> id = pars.back();
+            pars.pop_back();
+            if (defaultValue.empty()) {
+                decl_par = decl_par + id + "&" + id + "arguments" + "@" + to_string(i) + "[@]" + "=" + "^";
+            } else {
+                string r = gera_label("IF_ELSE");
+                string s = gera_label("IF_CONTINUE");
+                vector<string> def = auxiliar + "arguments" + "@" + to_string(i) + "[@]" + "undefined" + "@" + "==" + "!" + r + "?" + id + "&" + id + defaultValue + "=" + "^";
+                vector<string> notDef = auxiliar + s + "#" + (":" + r) + id + "&" + id + "arguments" + "@" + to_string(i) + "[@]" + "=" + "^" + (":" + s);
+                decl_par = decl_par + def + notDef;
+            }
+        }
+        pars.clear();
+        $$.c = decl_par; 
+    }
+    ;
+
+D_LINHA_ : _ID '=' Expressao ',' D_LINHA_ { 
+        pars.push_back($1.c);
+        pars.push_back($3.c);
+        $$.c = $1.c + $3.c + $5.c; 
+    }
+  | _ID ',' D_LINHA_ { 
+        pars.push_back($1.c);
+        pars.push_back(auxiliar);
+        $$.c = $1.c + $3.c; 
+    }
+  | _ID '=' Expressao { 
+        pars.push_back($1.c);
+        pars.push_back($3.c);
+        $$.c = $1.c + $3.c; 
+    }
+  | _ID { 
+        pars.push_back($1.c);
+        pars.push_back(auxiliar);
+        $$.c = $1.c; 
+    }
+    ;
+
+LV_ : LVALUE P { $$.c = $1.c + "@" + $2.c; }
+    ;
+
+LVALUE : _ID { $$.c = $1.c; }
+       ;
+
+P : '[' Expressao ']' P { $$.c = $2.c + "[@]" + $4.c; }
+  | '.' _ID P { $$.c = $2.c + "[@]" + $3.c; }
+  | '[' Expressao ']' { $$.c = $2.c; }
+  | '.' _ID { $$.c = $2.c; }
+  ;
+
+O : '{' Atribuicao '}' { $$.c = auxiliar + "{}" + $2.c; }
+  | B_ { $$.c = auxiliar + "{}"; }
+  ;
+
+Atribuicao : _ID ':' Expressao ',' Atribuicao { $$.c = $1.c + $3.c + "[<=]" + $5.c; }
+      | _ID ':' Expressao { $$.c = $1.c + $3.c + "[<=]"; }
+      ;
+
+F : _FLOAT { $$.c = $1.c; }
+  | _STRING { $$.c = $1.c; }
+  | _BOLEANO { $$.c = $1.c; }
+  | '(' Expressao ')' { $$ = $2; }
+  | CF { $$ = $1; }
+  | ARRAY { $$ = $1; }
+  | FA { $$ = $1; }
+  | Funcao_Seta { $$ = $1; }
+  ;
+
+CF : _ID '(' P_ ')' { $$.c = $3.c + to_string(quantidade_parametros) + $1.c + "@" + "$"; quantidade_parametros = 0; }
+   | _ID '(' ')' { $$.c = auxiliar + "0" + $1.c + "@" + "$"; }
+   | LV_ '(' P_ ')' { $$.c = $3.c + to_string(quantidade_parametros) + $1.c + "[@]" + "$"; quantidade_parametros = 0; }
+   | LV_ '(' ')' { $$.c = auxiliar + "0" + $1.c + "[@]" + "$"; }
+   ;
+
+ARRAY : '[' ELS ']' { 
+        $$.c = auxiliar + "[]";
+        int tam = elements.size();
+        for (int i = 0; i < tam; i++) {
+            $$.c = $$.c + to_string(i) + elements.back() + "[<=]";
+            elements.pop_back();
+        }
+    }
+  | '[' ']' { $$.c = auxiliar + "[]"; }
+  ;
+
+FA : FUNC_ANON ')' Bloco { 
+        string r = gera_label("FUNCANON"); 
+        vector<string> retorna = auxiliar + "undefined" + "@" + "'&retorno'" + "@" + "~";
+        funcs = funcs + (":" + r) + $3.c + retorna;
+        $$.c = auxiliar + "{}" + "'&funcao'" + r + "[<=]"; 
+    }
+  | FUNC_ANON D_LINHA ')' Bloco { 
+        string r = gera_label("FUNCANON");
+        vector<string> retorna = auxiliar + "undefined" + "@" + "'&retorno'" + "@" + "~";
+        funcs = funcs + (":" + r) + $2.c + $4.c + retorna;
+        $$.c = auxiliar + "{}" + "'&funcao'" + r + "[<=]"; 
+    }
+    ;
+
+Funcao_Seta : H _ARROW Expressao { 
+        string r = gera_label("FUNCANON"); 
+        vector<string> retorna = auxiliar + $3.c + "'&retorno'" + "@" + "~";
+        funcs = funcs + (":" + r) + $1.c + retorna;
+        $$.c = auxiliar + "{}" + "'&funcao'" + r + "[<=]"; 
+    }
+    ;
+
+P_ : Expressao ',' P_ { $$.c = $1.c + $3.c; quantidade_parametros++; }
+   | Expressao { $$.c = $1.c; quantidade_parametros++; }
+   ;
+
+ELS : Expressao ',' ELS { elements.push_back($1.c); }
+    | Expressao { elements.push_back($1.c); }
+    ;
+
+H : _ID { $$.c = $1.c + "&" + $1.c + "arguments" + "@" + "0" + "[@]" + "=" + "^"; }
+  | '(' ')' { $$.c = auxiliar; }
+  | APS D_LINHA ')' { $$.c = $2.c; }
   ;
 
 %%
 
 #include "lex.yy.c"
 
-lista_strings concatena(lista_strings a, lista_strings b) {
-  for(int i(0); i < b.size(); i++ ) a.push_back( b[i] );
-  return a;
+vector<string> operator+(const vector<string>& a, const vector<string>& b) {
+    vector<string> result(a);
+    result.insert(result.end(), b.begin(), b.end());
+    return result;
 }
 
-lista_strings operator+(lista_strings a, lista_strings b) {
-  return concatena(a, b);
+vector<string> operator+(const vector<string>& a, const string& b) {
+    vector<string> result(a);
+    result.push_back(b);
+    return result;
 }
 
-lista_strings operator+(lista_strings a, string b) {
-  a.push_back(b);
-  return a;
+string gera_label(const string& prefixo) {
+    static int n = 0;
+    return prefixo + "_" + to_string(++n) + ":";
 }
 
-lista_strings operator+(string a, lista_strings b) {
-  lista_strings c;
-  c.push_back(a);
-  return c + b;
+vector<string> resolve_enderecos(const vector<string>& entrada) {
+    map<string, int> label;
+    vector<string> saida;
+
+    for (const auto& item : entrada) {
+        if (item[0] == ':') {
+            label[item.substr(1)] = saida.size();
+        } else {
+            saida.push_back(item);
+        }
+    }
+
+    for (auto& item : saida) {
+        if (label.count(item) > 0) {
+            item = to_string(label[item]);
+        }
+    }
+
+    return saida;
 }
 
-void generate_var(Atributos var){
-  if(vars.count(var.c.back()) == 0){
-	vars[var.c.back()] = var.l;
-  }
-  else {
-	cout << "Erro: a variável '" << var.c.back() << "' já foi declarada na linha " << vars[var.c.back()] << "." << endl;
-	exit(1);
-  }
+void imprime_vetor(const vector<string>& v) {
+    for (const auto& item : v) {
+        cout << item << " ";
+    }
 }
 
-void check_var(Atributos var){
-	
-	if(vars.count(var.c.back()) == 0){
-		cout << "Erro: a variável '" << var.c.back() << "' não foi declarada." << endl;
-		exit(1);
-	}
+string remove_espacos(const char* c) {
+    string temp(c);
+    return temp.erase(temp.size() - 1);
 }
 
-string gera_label(string prefixo){
-  static int n = 0;
-  return prefixo + "_" + to_string(++n) + ":";
-}
-
-void print(lista_strings source){
-  for(int i(0); i < source.size(); i++) cout << source[i] << endl;
-}
-
-lista_strings resolve_enderecos(lista_strings entrada) {
-  map<string,int> label;
-  vector<string> saida;
-  for( int i = 0; i < entrada.size(); i++ ) 
-    if( entrada[i][0] == ':' ) 
-        label[entrada[i].substr(1)] = saida.size();
-    else
-      saida.push_back( entrada[i] );
-  
-  for( int i = 0; i < saida.size(); i++ ) 
-    if( label.count( saida[i] ) > 0 )
-        saida[i] = to_string(label[saida[i]]);
-    
-  return saida;
-}
-
-void yyerror( const char* st ) {
-   puts( st ); 
-   printf( "Proximo a: %s, linha: %d, coluna: %d\n", yytext, linha, coluna);
-   exit( 1 );
+vector<string> divide_string(const string& str) {
+    vector<string> tokens;
+    istringstream iss(str);
+    string token;
+    while (iss >> token) {
+        tokens.push_back(token);
+    }
+    return tokens;
 }
 
 int token(int tk) {
-    yylval.c = novo + yytext;
-    yylval.l = linha;
-    coluna += strlen(yytext);
+    yylval.c = auxiliar + yytext;
     return tk;
 }
 
-string trim(string str, string charsToRemove){
-	for(auto c : charsToRemove){
-		str.erase(remove(str.begin(), str.end(), c), str.end());
-	}
-	return str;
+void yyerror(const char* st) {
+    puts(st);
+    printf("Proximo a: %s\n", yytext);
+    exit(1);
 }
 
-lista_strings token(string asmLine){
-	lista_strings instructions;
-	string word = "";
-	for(auto c : asmLine){
-		if(c != ' ')
-			word = word + c;
-		else {
-			instructions.push_back(word);
-			word = "";
-		}
-	}
-	instructions.push_back(word);
-	return instructions;
-}
-
-int main( int argc, char** argv ) {
-  yyparse();
-  return 0;
+int main(int argc, char* argv[]) {
+    yyparse();
+    return 0;
 }
